@@ -28,3 +28,25 @@ export type HandicapHistory = {
   handicap: number
   rounds: number // Total rounds at this point
 }
+
+// CourseReview represents a review for a golf course
+export type CourseReview = {
+  id: string
+  round_id: string
+  course_name: string
+  difficulty_rating: number // 1-5
+  weather: string
+  overall_rating: number // 1-5
+  review_text?: string
+  user_id?: string | null
+  created_at: string
+}
+
+// CourseReviewStats represents statistics for course reviews
+export type CourseReviewStats = {
+  course_name: string
+  total_reviews: number
+  avg_difficulty: number
+  avg_overall: number
+  reviews: CourseReview[]
+}

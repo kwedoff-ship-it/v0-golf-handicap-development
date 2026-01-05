@@ -61,59 +61,57 @@ export function Dashboard({
   }, [rounds])
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="mb-12 text-center relative">
-          <div className="absolute right-0 top-0">
-            <LogoutButton />
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">Golf Handicap Tracker</h1>
-          <p className="text-slate-400 text-lg">Track your rounds and monitor your progress</p>
-          <Link href="/stats" className="inline-block mt-3 text-blue-400 hover:text-blue-300 text-sm underline">
-            View Global Statistics →
-          </Link>
+    <main className="space-y-8">
+      {/* Header */}
+      <div className="mb-12 text-center relative">
+        <div className="absolute right-0 top-0">
+          <LogoutButton />
         </div>
 
-        {/* Player selector + KPI cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <PlayerSelector
-            players={players}
-            selectedPlayerId={selectedPlayerId}
-            onPlayerChange={onPlayerChange}
-            onViewProfile={onViewProfile}
-          />
-          <KPICard
-            label="Current Handicap Index"
-            value={handicap}
-            subtitle={`Based on ${rounds.length} round${rounds.length !== 1 ? "s" : ""}`}
-          />
-          <KPICard label="Rounds This Year" value={roundsThisYear} subtitle={new Date().getFullYear().toString()} />
-          <KPICard label="Total Rounds" value={rounds.length} subtitle="All Time" />
-        </div>
+        <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">Golf Handicap Tracker</h1>
+        <p className="text-slate-300 text-lg">Track your rounds and monitor your progress</p>
+        <Link href="/stats" className="inline-block mt-3 text-emerald-400 hover:text-emerald-300 text-sm underline">
+          View Global Statistics →
+        </Link>
+      </div>
 
-        {/* Recent rounds table */}
-        <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Recent Rounds (Last 10)</h2>
-            {rounds.length > 10 && (
-              <button
-                onClick={onViewProfile}
-                className="text-emerald-400 hover:text-emerald-300 transition-colors text-sm font-medium"
-              >
-                View All
-              </button>
-            )}
-          </div>
-          <RoundTable rounds={recentRounds} />
-        </div>
+      {/* Player selector + KPI cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <PlayerSelector
+          players={players}
+          selectedPlayerId={selectedPlayerId}
+          onPlayerChange={onPlayerChange}
+          onViewProfile={onViewProfile}
+        />
+        <KPICard
+          label="Current Handicap Index"
+          value={handicap}
+          subtitle={`Based on ${rounds.length} round${rounds.length !== 1 ? "s" : ""}`}
+        />
+        <KPICard label="Rounds This Year" value={roundsThisYear} subtitle={new Date().getFullYear().toString()} />
+        <KPICard label="Total Rounds" value={rounds.length} subtitle="All Time" />
+      </div>
 
-        {/* Add player and add round forms */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AddPlayerForm onAddPlayer={onAddPlayer} />
-          <AddRoundForm onAddRound={onAddRound} playerId={selectedPlayerId} />
+      {/* Recent rounds table */}
+      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Recent Rounds (Last 10)</h2>
+          {rounds.length > 10 && (
+            <button
+              onClick={onViewProfile}
+              className="text-emerald-400 hover:text-emerald-300 transition-colors text-sm font-medium"
+            >
+              View All
+            </button>
+          )}
         </div>
+        <RoundTable rounds={recentRounds} />
+      </div>
+
+      {/* Add player and add round forms */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AddPlayerForm onAddPlayer={onAddPlayer} />
+        <AddRoundForm onAddRound={onAddRound} playerId={selectedPlayerId} />
       </div>
     </main>
   )

@@ -74,17 +74,18 @@ export async function addRound(formData: FormData) {
   }
 }
 
-export async function getRounds(playerId: string): Promise<Round[]> {
+export async function getRounds(playerId?: string): Promise<Round[]> {
   try {
-    if (!playerId) return []
-
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from("rounds")
-      .select("*")
-      .eq("player_id", playerId)
-      .order("date", { ascending: false })
+    let query = supabase.from("rounds").select("*")
+
+    // If playerId provided, filter by it
+    if (playerId) {
+      query = query.eq("player_id", playerId)
+    }
+
+    const { data, error } = await query.order("date", { ascending: false })
 
     if (error) {
       console.error("Error fetching rounds:", error.message)

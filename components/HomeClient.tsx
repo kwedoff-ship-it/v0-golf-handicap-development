@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import type { Player, Round } from "@/lib/types"
 import { Dashboard } from "@/components/Dashboard"
 import { Profile } from "@/components/Profile"
+import { TabNavigation } from "@/components/TabNavigation"
 import { addPlayer as addPlayerAction } from "@/app/actions/players"
 import { addRound as addRoundAction } from "@/app/actions/rounds"
 
@@ -15,11 +16,7 @@ interface HomeClientProps {
   initialPlayerId: string | null
 }
 
-export function HomeClient({
-  initialPlayers,
-  initialRounds,
-  initialPlayerId,
-}: HomeClientProps) {
+export function HomeClient({ initialPlayers, initialRounds, initialPlayerId }: HomeClientProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(initialPlayerId)
   const [viewingProfile, setViewingProfile] = useState(false)
   const [players, setPlayers] = useState<Player[]>(initialPlayers)
@@ -101,24 +98,30 @@ export function HomeClient({
   // Show profile view if user clicked "View Profile"
   if (viewingProfile && selectedPlayer) {
     return (
-      <Profile
-        player={selectedPlayer}
-        rounds={rounds}
-        onBack={() => setViewingProfile(false)}
-      />
+      <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
+        <div className="mx-auto max-w-7xl">
+          <TabNavigation />
+          <Profile player={selectedPlayer} rounds={rounds} onBack={() => setViewingProfile(false)} />
+        </div>
+      </div>
     )
   }
 
   // Otherwise show dashboard
   return (
-    <Dashboard
-      players={players}
-      selectedPlayerId={selectedPlayerId}
-      rounds={rounds}
-      onPlayerChange={setSelectedPlayerId}
-      onViewProfile={() => setViewingProfile(true)}
-      onAddPlayer={handleAddPlayer}
-      onAddRound={handleAddRound}
-    />
+    <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
+      <div className="mx-auto max-w-7xl">
+        <TabNavigation />
+        <Dashboard
+          players={players}
+          selectedPlayerId={selectedPlayerId}
+          rounds={rounds}
+          onPlayerChange={setSelectedPlayerId}
+          onViewProfile={() => setViewingProfile(true)}
+          onAddPlayer={handleAddPlayer}
+          onAddRound={handleAddRound}
+        />
+      </div>
+    </div>
   )
 }
