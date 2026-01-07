@@ -16,10 +16,10 @@ interface AddPlayerFormProps {
 export function AddPlayerForm({ onAddPlayer }: AddPlayerFormProps) {
   // Track if form is expanded or collapsed
   const [isExpanded, setIsExpanded] = useState(false)
-  
+
   // Store form field values
   const [formData, setFormData] = useState({ name: "", favorite_course: "" })
-  
+
   // Loading state to prevent duplicate submissions
   const [loading, setLoading] = useState(false)
 
@@ -41,7 +41,7 @@ export function AddPlayerForm({ onAddPlayer }: AddPlayerFormProps) {
   }
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl shadow-xl overflow-hidden">
+    <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl shadow-xl overflow-hidden self-start">
       {/* Header button to expand/collapse form */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -61,38 +61,30 @@ export function AddPlayerForm({ onAddPlayer }: AddPlayerFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Player name input */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Player Name
-              </label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Player Name</label>
               <input
                 type="text"
                 placeholder="Enter name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
               />
             </div>
-            
+
             {/* Favorite course input */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Favorite Course
-              </label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Favorite Course</label>
               <input
                 type="text"
                 placeholder="Enter course"
                 value={formData.favorite_course}
-                onChange={(e) =>
-                  setFormData({ ...formData, favorite_course: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, favorite_course: e.target.value })}
                 required
                 className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
               />
             </div>
-            
+
             {/* Submit button */}
             <button
               type="submit"
