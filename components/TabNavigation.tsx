@@ -2,14 +2,21 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, MessageSquare } from "lucide-react"
+import { Home, MessageSquare, Settings } from "lucide-react"
 
-export function TabNavigation() {
+interface TabNavigationProps {
+  isAuthenticated?: boolean
+}
+
+export function TabNavigation({ isAuthenticated = false }: TabNavigationProps) {
   const pathname = usePathname()
 
   const tabs = [
     { name: "Handicap Tracker", href: "/", icon: Home },
     { name: "Course Reviews", href: "/reviews", icon: MessageSquare },
+    ...(isAuthenticated
+      ? [{ name: "Settings", href: "/settings", icon: Settings }]
+      : []),
   ]
 
   return (

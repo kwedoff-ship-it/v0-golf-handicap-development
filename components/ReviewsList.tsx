@@ -1,5 +1,3 @@
-"use client"
-
 import type { CourseReview } from "@/lib/types"
 import { Star } from "lucide-react"
 

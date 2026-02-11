@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { createReview } from "@/app/actions/reviews"
 import type { Round, CourseReview } from "@/lib/types"
 import { ChevronDown, ChevronUp, Star } from "lucide-react"
@@ -84,12 +83,12 @@ export function AddReviewForm({ allRounds, onReviewAdded }: AddReviewFormProps) 
       </button>
 
       {isExpanded && (
-        <div className="p-6">
+        <div className="px-6 pb-6 border-t border-slate-800 pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="courseName" className="text-slate-300">
+              <label htmlFor="courseName" className="block text-sm font-medium text-slate-300 mb-2">
                 Course Name
-              </Label>
+              </label>
               <Input
                 id="courseName"
                 value={courseName}
@@ -101,16 +100,16 @@ export function AddReviewForm({ allRounds, onReviewAdded }: AddReviewFormProps) 
             </div>
 
             <div>
-              <Label htmlFor="difficulty" className="text-slate-300">
+              <label htmlFor="difficulty" className="block text-sm font-medium text-slate-300 mb-2">
                 Difficulty Rating
-              </Label>
+              </label>
               <StarRating value={difficultyRating} onChange={setDifficultyRating} />
             </div>
 
             <div>
-              <Label htmlFor="weather" className="text-slate-300">
+              <label htmlFor="weather" className="block text-sm font-medium text-slate-300 mb-2">
                 Weather
-              </Label>
+              </label>
               <select
                 id="weather"
                 value={weather}
@@ -126,16 +125,16 @@ export function AddReviewForm({ allRounds, onReviewAdded }: AddReviewFormProps) 
             </div>
 
             <div>
-              <Label htmlFor="overall" className="text-slate-300">
+              <label htmlFor="overall" className="block text-sm font-medium text-slate-300 mb-2">
                 Overall Rating
-              </Label>
+              </label>
               <StarRating value={overallRating} onChange={setOverallRating} />
             </div>
 
             <div>
-              <Label htmlFor="reviewText" className="text-slate-300">
+              <label htmlFor="reviewText" className="block text-sm font-medium text-slate-300 mb-2">
                 Review (Optional)
-              </Label>
+              </label>
               <textarea
                 id="reviewText"
                 value={reviewText}

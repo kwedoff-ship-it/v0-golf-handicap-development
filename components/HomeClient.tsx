@@ -14,9 +14,10 @@ interface HomeClientProps {
   initialPlayers: Player[]
   initialRounds: Round[]
   initialPlayerId: string | null
+  isAuthenticated?: boolean
 }
 
-export function HomeClient({ initialPlayers, initialRounds, initialPlayerId }: HomeClientProps) {
+export function HomeClient({ initialPlayers, initialRounds, initialPlayerId, isAuthenticated = false }: HomeClientProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(initialPlayerId)
   const [viewingProfile, setViewingProfile] = useState(false)
   const [players, setPlayers] = useState<Player[]>(initialPlayers)
@@ -100,7 +101,7 @@ export function HomeClient({ initialPlayers, initialRounds, initialPlayerId }: H
     return (
       <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
         <div className="mx-auto max-w-7xl">
-          <TabNavigation />
+          <TabNavigation isAuthenticated={isAuthenticated} />
           <Profile player={selectedPlayer} rounds={rounds} onBack={() => setViewingProfile(false)} />
         </div>
       </div>
@@ -111,7 +112,7 @@ export function HomeClient({ initialPlayers, initialRounds, initialPlayerId }: H
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
       <div className="mx-auto max-w-7xl">
-        <TabNavigation />
+        <TabNavigation isAuthenticated={isAuthenticated} />
         <Dashboard
           players={players}
           selectedPlayerId={selectedPlayerId}

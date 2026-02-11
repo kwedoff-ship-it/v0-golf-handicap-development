@@ -50,3 +50,13 @@ export type CourseReviewStats = {
   avg_overall: number
   reviews: CourseReview[]
 }
+
+// UserProfile represents a user's account profile settings
+export type UserProfile = {
+  id: string
+  user_id: string
+  display_name: string | null
+  profile_picture_url: string | null
+  created_at: string
+  updated_at: string
+}
