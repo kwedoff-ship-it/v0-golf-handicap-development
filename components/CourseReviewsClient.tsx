@@ -11,9 +11,10 @@ import { LogoutButton } from "@/components/LogoutButton"
 type CourseReviewsClientProps = {
   initialReviews: CourseReview[]
   allRounds: Round[]
+  isAuthenticated?: boolean
 }
 
-export function CourseReviewsClient({ initialReviews, allRounds }: CourseReviewsClientProps) {
+export function CourseReviewsClient({ initialReviews, allRounds, isAuthenticated = false }: CourseReviewsClientProps) {
   const [reviews, setReviews] = useState<CourseReview[]>(initialReviews)
   const [searchResults, setSearchResults] = useState<CourseReview[] | null>(null)
 
@@ -28,7 +29,7 @@ export function CourseReviewsClient({ initialReviews, allRounds }: CourseReviews
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
       <div className="mx-auto max-w-7xl space-y-8">
-        <TabNavigation />
+        <TabNavigation isAuthenticated={isAuthenticated} />
 
         <div className="mb-12 text-center relative">
           <div className="absolute right-0 top-0">
