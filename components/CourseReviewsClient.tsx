@@ -6,6 +6,7 @@ import { AddReviewForm } from "@/components/AddReviewForm"
 import { CourseSearch } from "@/components/CourseSearch"
 import { ReviewsList } from "@/components/ReviewsList"
 import { TabNavigation } from "@/components/TabNavigation"
+import { GolfGreeting } from "@/components/GolfGreeting"
 
 type CourseReviewsClientProps = {
   initialReviews: CourseReview[]
@@ -13,9 +14,10 @@ type CourseReviewsClientProps = {
   isAuthenticated?: boolean
   profilePictureUrl?: string | null
   displayName?: string | null
+  userEmail?: string | null
 }
 
-export function CourseReviewsClient({ initialReviews, allRounds, isAuthenticated = false, profilePictureUrl, displayName }: CourseReviewsClientProps) {
+export function CourseReviewsClient({ initialReviews, allRounds, isAuthenticated = false, profilePictureUrl, displayName, userEmail }: CourseReviewsClientProps) {
   const [reviews, setReviews] = useState<CourseReview[]>(initialReviews)
   const [searchResults, setSearchResults] = useState<CourseReview[] | null>(null)
 
@@ -30,6 +32,7 @@ export function CourseReviewsClient({ initialReviews, allRounds, isAuthenticated
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
       <div className="mx-auto max-w-7xl space-y-8">
+        <GolfGreeting displayName={displayName} email={userEmail} isAuthenticated={isAuthenticated} />
         <TabNavigation isAuthenticated={isAuthenticated} profilePictureUrl={profilePictureUrl} displayName={displayName} />
 
         <div className="mb-12 text-center">

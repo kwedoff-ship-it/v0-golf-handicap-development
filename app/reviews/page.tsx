@@ -32,6 +32,7 @@ export default async function ReviewsPage() {
       isAuthenticated={!!user}
       profilePictureUrl={profilePictureUrl}
       displayName={displayName}
+      userEmail={user?.email ?? null}
     />
   )
 }

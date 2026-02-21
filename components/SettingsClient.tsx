@@ -4,6 +4,7 @@ import React from "react"
 
 import { useState, useRef } from "react"
 import { TabNavigation } from "@/components/TabNavigation"
+import { GolfGreeting } from "@/components/GolfGreeting"
 import { updateProfile, removeProfilePicture } from "@/app/actions/profile"
 import type { UserProfile } from "@/lib/types"
 import { Camera, Trash2, User } from "lucide-react"
@@ -92,6 +93,7 @@ export function SettingsClient({ profile, userEmail, isAuthenticated }: Settings
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
       <div className="mx-auto max-w-7xl">
+        <GolfGreeting displayName={displayName} email={userEmail} isAuthenticated={isAuthenticated} />
         <TabNavigation isAuthenticated={isAuthenticated} profilePictureUrl={profilePictureUrl} displayName={displayName} />
 
         <main className="space-y-8">
