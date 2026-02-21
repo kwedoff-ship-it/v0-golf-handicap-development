@@ -11,7 +11,7 @@ import { KPICard } from "./KPICard"
 import { RoundTable } from "./RoundTable"
 import { AddPlayerForm } from "./AddPlayerForm"
 import { AddRoundForm } from "./AddRoundForm"
-import { LogoutButton } from "./LogoutButton"
+
 
 interface DashboardProps {
   players: Player[]
@@ -63,11 +63,7 @@ export function Dashboard({
   return (
     <main className="space-y-8">
       {/* Header */}
-      <div className="mb-12 text-center relative">
-        <div className="absolute right-0 top-0">
-          <LogoutButton />
-        </div>
-
+      <div className="mb-12 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">Golf Handicap Tracker</h1>
         <p className="text-slate-300 text-lg">Track your rounds and monitor your progress</p>
         <Link href="/stats" className="inline-block mt-3 text-emerald-400 hover:text-emerald-300 text-sm underline">

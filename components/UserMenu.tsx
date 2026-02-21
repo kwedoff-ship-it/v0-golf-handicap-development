@@ -30,10 +30,14 @@ export function UserMenu({ profilePictureUrl, displayName, isAuthenticated }: Us
   if (!isAuthenticated) {
     return (
       <button
-        onClick={() => router.push("/auth/login")}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-lg transition-colors"
+        onClick={async () => {
+          await logout()
+        }}
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-lg transition-colors"
+        aria-label="Log out"
       >
-        Log In
+        <LogOut className="h-4 w-4" />
+        Log Out
       </button>
     )
   }
