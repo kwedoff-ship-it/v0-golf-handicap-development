@@ -55,7 +55,7 @@ export default function LoginPage() {
             <CardContent>
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
-                  <div className="grid gap-2">
+                  <div className="grid gap-2" suppressHydrationWarning>
                     <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
@@ -64,9 +64,10 @@ export default function LoginPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      suppressHydrationWarning
                     />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-2" suppressHydrationWarning>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password">Password</Label>
                       <Link
@@ -82,6 +83,7 @@ export default function LoginPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      suppressHydrationWarning
                     />
                   </div>
                   {error && <p className="text-sm text-destructive">{error}</p>}
