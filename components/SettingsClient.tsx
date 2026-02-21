@@ -40,6 +40,7 @@ export function SettingsClient({ profile, userEmail, isAuthenticated }: Settings
       })
 
       const data = await res.json()
+      console.log("[v0] Upload response:", res.status, data)
 
       if (!res.ok) {
         throw new Error(data.error || "Upload failed")

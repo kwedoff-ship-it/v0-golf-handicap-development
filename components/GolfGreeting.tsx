@@ -59,19 +59,34 @@ export function GolfGreeting({ displayName, email, isAuthenticated = false }: Go
 
   const [greeting, setGreeting] = useState<string | null>(null)
 
-  // Generate greeting client-side only to avoid hydration mismatch from Math.random()
+  // Persist greeting per session so it stays the same across page switches.
+  // Only regenerates on a fresh login (new session).
   useEffect(() => {
+    const storageKey = "golf-greeting"
+    const storedName = sessionStorage.getItem("golf-greeting-name")
+    const storedGreeting = sessionStorage.getItem(storageKey)
+
+    // Reuse stored greeting if the name hasn't changed (same session, same user)
+    if (storedGreeting && storedName === name) {
+      setGreeting(storedGreeting)
+      return
+    }
+
+    // Generate new greeting for new session or new user
     const randomGreeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
     const randomSaying = GOLF_SAYINGS[Math.floor(Math.random() * GOLF_SAYINGS.length)]
-    setGreeting(`${randomGreeting}, ${name}, ${randomSaying}`)
+    const newGreeting = `${randomGreeting}, ${name}, ${randomSaying}`
+    sessionStorage.setItem(storageKey, newGreeting)
+    sessionStorage.setItem("golf-greeting-name", name)
+    setGreeting(newGreeting)
   }, [name])
 
   if (!greeting) {
-    return <div className="text-center py-3 px-4 h-[52px]" />
+    return <div className="text-center py-2 px-4 h-[44px]" />
   }
 
   return (
-    <div className="text-center py-3 px-4">
+    <div className="text-center py-2 px-4 mb-3">
       <p className="text-base sm:text-lg font-medium text-emerald-400 italic">
         {greeting}
       </p>
