@@ -7,6 +7,7 @@ import type { Player, Round } from "@/lib/types"
 import { Dashboard } from "@/components/Dashboard"
 import { Profile } from "@/components/Profile"
 import { TabNavigation } from "@/components/TabNavigation"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { GolfGreeting } from "@/components/GolfGreeting"
 import { addPlayer as addPlayerAction } from "@/app/actions/players"
 import { addRound as addRoundAction } from "@/app/actions/rounds"
@@ -107,7 +108,9 @@ export function HomeClient({ initialPlayers, initialRounds, initialPlayerId, isA
         <div className="mx-auto max-w-7xl">
           <GolfGreeting displayName={displayName} email={userEmail} isAuthenticated={isAuthenticated} />
           <TabNavigation isAuthenticated={isAuthenticated} profilePictureUrl={profilePictureUrl} displayName={displayName} />
-          <Profile player={selectedPlayer} rounds={rounds} onBack={() => setViewingProfile(false)} />
+          <ErrorBoundary>
+            <Profile player={selectedPlayer} rounds={rounds} onBack={() => setViewingProfile(false)} />
+          </ErrorBoundary>
         </div>
       </div>
     )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const GREETINGS = [
   "Hey",
@@ -57,12 +57,18 @@ interface GolfGreetingProps {
 export function GolfGreeting({ displayName, email, isAuthenticated = false }: GolfGreetingProps) {
   const name = displayName || (isAuthenticated && email ? email.split("@")[0] : "my fellow visitor")
 
-  // useState initializer runs once per mount (login/page load), so each login gets a fresh random combo
-  const [greeting] = useState(() => {
+  const [greeting, setGreeting] = useState<string | null>(null)
+
+  // Generate greeting client-side only to avoid hydration mismatch from Math.random()
+  useEffect(() => {
     const randomGreeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
     const randomSaying = GOLF_SAYINGS[Math.floor(Math.random() * GOLF_SAYINGS.length)]
-    return `${randomGreeting}, ${name}, ${randomSaying}`
-  })
+    setGreeting(`${randomGreeting}, ${name}, ${randomSaying}`)
+  }, [name])
+
+  if (!greeting) {
+    return <div className="text-center py-3 px-4 h-[52px]" />
+  }
 
   return (
     <div className="text-center py-3 px-4">
