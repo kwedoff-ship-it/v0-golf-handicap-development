@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { updateSession } from "@/lib/supabase/proxy"
 
 export async function proxy(request: NextRequest) {
+  // Refresh Supabase session and apply security headers
   const response = await updateSession(request)
 
   response.headers.set("X-Content-Type-Options", "nosniff")
