@@ -7,6 +7,7 @@ import type { Player, Round } from "@/lib/types"
 import { Dashboard } from "@/components/Dashboard"
 import { Profile } from "@/components/Profile"
 import { TabNavigation } from "@/components/TabNavigation"
+import { GolfGreeting } from "@/components/GolfGreeting"
 import { addPlayer as addPlayerAction } from "@/app/actions/players"
 import { addRound as addRoundAction } from "@/app/actions/rounds"
 
@@ -17,9 +18,10 @@ interface HomeClientProps {
   isAuthenticated?: boolean
   profilePictureUrl?: string | null
   displayName?: string | null
+  userEmail?: string | null
 }
 
-export function HomeClient({ initialPlayers, initialRounds, initialPlayerId, isAuthenticated = false, profilePictureUrl, displayName }: HomeClientProps) {
+export function HomeClient({ initialPlayers, initialRounds, initialPlayerId, isAuthenticated = false, profilePictureUrl, displayName, userEmail }: HomeClientProps) {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(initialPlayerId)
   const [viewingProfile, setViewingProfile] = useState(false)
   const [players, setPlayers] = useState<Player[]>(initialPlayers)
@@ -103,6 +105,7 @@ export function HomeClient({ initialPlayers, initialRounds, initialPlayerId, isA
     return (
       <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
         <div className="mx-auto max-w-7xl">
+          <GolfGreeting displayName={displayName} email={userEmail} isAuthenticated={isAuthenticated} />
           <TabNavigation isAuthenticated={isAuthenticated} profilePictureUrl={profilePictureUrl} displayName={displayName} />
           <Profile player={selectedPlayer} rounds={rounds} onBack={() => setViewingProfile(false)} />
         </div>
@@ -113,7 +116,8 @@ export function HomeClient({ initialPlayers, initialRounds, initialPlayerId, isA
   // Otherwise show dashboard
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
-      <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
+        <GolfGreeting displayName={displayName} email={userEmail} isAuthenticated={isAuthenticated} />
         <TabNavigation isAuthenticated={isAuthenticated} profilePictureUrl={profilePictureUrl} displayName={displayName} />
         <Dashboard
           players={players}

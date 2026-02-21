@@ -38,6 +38,7 @@ export default async function Home() {
       isAuthenticated={!!user}
       profilePictureUrl={profilePictureUrl}
       displayName={displayName}
+      userEmail={user?.email ?? null}
     />
   )
 }
