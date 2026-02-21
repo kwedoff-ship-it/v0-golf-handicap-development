@@ -1,7 +1,7 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true, //Catches bugs in development
+  reactStrictMode: true, // Catches bugs in development
 
   typescript: {
     ignoreBuildErrors: true,

@@ -4,7 +4,6 @@ import React from "react"
 
 import { useState, useRef } from "react"
 import { TabNavigation } from "@/components/TabNavigation"
-import { LogoutButton } from "@/components/LogoutButton"
 import { updateProfile, removeProfilePicture } from "@/app/actions/profile"
 import type { UserProfile } from "@/lib/types"
 import { Camera, Trash2, User } from "lucide-react"
@@ -93,14 +92,11 @@ export function SettingsClient({ profile, userEmail, isAuthenticated }: Settings
   return (
     <div className="min-h-screen bg-slate-900 p-4 md:p-8 text-white">
       <div className="mx-auto max-w-7xl">
-        <TabNavigation isAuthenticated={isAuthenticated} />
+        <TabNavigation isAuthenticated={isAuthenticated} profilePictureUrl={profilePictureUrl} displayName={displayName} />
 
         <main className="space-y-8">
           {/* Header */}
-          <div className="mb-12 text-center relative">
-            <div className="absolute right-0 top-0">
-              <LogoutButton />
-            </div>
+          <div className="mb-12 text-center">
             <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">Settings</h1>
             <p className="text-slate-300 text-lg">Manage your account and profile</p>
           </div>
