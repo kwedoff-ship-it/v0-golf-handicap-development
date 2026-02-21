@@ -1,28 +1,51 @@
 "use client"
 
-import { useMemo } from "react"
+import { useState } from "react"
+
+const GREETINGS = [
+  "Hey",
+  "Hello",
+  "What's good",
+  "Hi there",
+  "Yo",
+  "Well well well",
+  "Look who it is",
+  "There they are",
+  "Welcome back",
+  "What's up",
+]
 
 const GOLF_SAYINGS = [
-  "Hey, {name}, how are you hitting them today?",
-  "Hey, {name}, is it done being too cold to play?",
-  "Hey, {name}, when was your last birdie dude?",
-  "Hey, {name}, did you finally fix that slice?",
-  "Hey, {name}, ready to three-putt your way to glory?",
-  "Hey, {name}, the course isn't going to play itself!",
-  "Hey, {name}, I bet your short game is looking sharp today.",
-  "Hey, {name}, remember: it's not about the score, it's about the vibes.",
-  "Hey, {name}, when's the next round? The fairways are calling.",
-  "Hey, {name}, you been sneaking in range sessions or what?",
-  "Hey, {name}, your handicap is shaking in its boots right now.",
-  "Hey, {name}, think you can keep it on the fairway today?",
-  "Hey, {name}, the 19th hole misses you almost as much as the 1st.",
-  "Hey, {name}, driver or 3-wood off the tee today? Choose wisely.",
-  "Hey, {name}, how many balls are we losing this weekend?",
-  "Hey, {name}, that swing looking buttery smooth yet?",
-  "Hey, {name}, par is just a number... a number you should aim for.",
-  "Hey, {name}, hope your putter is feeling hot today!",
-  "Hey, {name}, grip it and rip it, let's see some birdies!",
-  "Hey, {name}, the greens are waiting and so is your best round ever.",
+  "how are you hitting them today?",
+  "is it done being too cold to play?",
+  "when was your last birdie dude?",
+  "did you finally fix that slice or are we still blaming the wind?",
+  "ready to three-putt your way to glory?",
+  "the course isn't going to play itself!",
+  "I bet your short game is looking sharp... or at least sharper than last time.",
+  "remember, it's not about the score... okay it's a little about the score.",
+  "when's the next round? The fairways are calling your name.",
+  "you been sneaking in range sessions or just watching YouTube tips?",
+  "your handicap called, it wants a word with you.",
+  "think you can keep it on the fairway today? Bold strategy.",
+  "the 19th hole misses you almost as much as the 1st tee does.",
+  "driver or 3-wood off the tee today? Choose wisely, grasshopper.",
+  "how many balls are we sacrificing to the water this weekend?",
+  "that swing looking buttery smooth yet or still a work in progress?",
+  "par is just a number... a number you should try hitting sometime.",
+  "hope your putter is feeling hot because the greens won't putt themselves!",
+  "grip it and rip it, let's see some birdies out there!",
+  "the greens are waiting and so is your best round ever. No pressure.",
+  "you coming in hot or are we easing into it with a nice top on the first tee?",
+  "bet you've been dreaming about that perfect drive all week.",
+  "you know what they say, a bad day on the course beats a good day at work.",
+  "tell me you're not still using that beat-up 7-iron from 2012.",
+  "the sand traps have been asking about you. They miss your visits.",
+  "new round, new you... same three-putt probably, but we believe in you.",
+  "you ready to shoot your age? No? How about your weight? Still no? Let's just have fun.",
+  "I heard the pin placements are generous today. Your time to shine.",
+  "fairways and greens, baby. That's the mantra. Now go do the opposite apparently.",
+  "the golf gods are smiling today. Or laughing. Hard to tell from here.",
 ]
 
 interface GolfGreetingProps {
@@ -34,13 +57,12 @@ interface GolfGreetingProps {
 export function GolfGreeting({ displayName, email, isAuthenticated = false }: GolfGreetingProps) {
   const name = displayName || (isAuthenticated && email ? email.split("@")[0] : "my fellow visitor")
 
-  const greeting = useMemo(() => {
-    // Seed by the current date so it changes daily but stays consistent within a session
-    const today = new Date()
-    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
-    const index = seed % GOLF_SAYINGS.length
-    return GOLF_SAYINGS[index].replace("{name}", name)
-  }, [name])
+  // useState initializer runs once per mount (login/page load), so each login gets a fresh random combo
+  const [greeting] = useState(() => {
+    const randomGreeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
+    const randomSaying = GOLF_SAYINGS[Math.floor(Math.random() * GOLF_SAYINGS.length)]
+    return `${randomGreeting}, ${name}, ${randomSaying}`
+  })
 
   return (
     <div className="text-center py-3 px-4">
