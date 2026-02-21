@@ -3,12 +3,21 @@
 "use client"
 
 import { useMemo } from "react"
+import dynamic from "next/dynamic"
 import { ArrowLeft } from "lucide-react"
 import type { Player, Round } from "@/lib/types"
 import { calculateHandicap, calculateHandicapHistory } from "@/lib/handicap"
 import { KPICard } from "./KPICard"
-import { HandicapChart } from "./HandicapChart"
 import { RoundTable } from "./RoundTable"
+
+const HandicapChart = dynamic(() => import("./HandicapChart").then(mod => ({ default: mod.HandicapChart })), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] flex items-center justify-center text-slate-500">
+      Loading chart...
+    </div>
+  ),
+})
 
 interface ProfileProps {
   player: Player
