@@ -63,7 +63,8 @@ export async function addRound(formData: FormData) {
       return { success: false, error: error.message }
     }
 
-    revalidatePath("/")
+    revalidatePath("/handicap")
+    revalidatePath("/overview")
     return { success: true, data: data as Round }
   } catch (err) {
     console.error("Unexpected error adding round:", err)
