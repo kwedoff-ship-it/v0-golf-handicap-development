@@ -39,17 +39,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Vercel Blob with a user-specific path
-    console.log("[v0] Uploading file:", file.name, "size:", file.size, "type:", file.type)
     const blob = await put(`profile-pictures/${user.id}/${file.name}`, file, {
       access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
     })
-    console.log("[v0] Upload success, blob URL:", blob.url)
 
     return NextResponse.json({
       url: blob.url,
     })
   } catch (error) {
-    console.error("[v0] Upload error:", error)
+    console.error("Upload error:", error)
     return NextResponse.json({ error: error instanceof Error ? error.message : "Upload failed" }, { status: 500 })
   }
 }

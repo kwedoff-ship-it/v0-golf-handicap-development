@@ -41,7 +41,8 @@ export async function addPlayer(formData: FormData) {
       return { success: false, error: error.message }
     }
 
-    revalidatePath("/")
+    revalidatePath("/handicap")
+    revalidatePath("/overview")
 
     return { success: true, data: data as Player }
   } catch (err) {

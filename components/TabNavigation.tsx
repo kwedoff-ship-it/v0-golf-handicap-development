@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, MessageSquare } from "lucide-react"
+import { Home, MessageSquare, BarChart3 } from "lucide-react"
 import { UserMenu } from "@/components/UserMenu"
 
 interface TabNavigationProps {
@@ -15,7 +15,8 @@ export function TabNavigation({ isAuthenticated = false, profilePictureUrl, disp
   const pathname = usePathname()
 
   const tabs = [
-    { name: "Handicap Tracker", href: "/", icon: Home },
+    { name: "Overview", href: "/overview", icon: BarChart3 },
+    { name: "Handicap Tracker", href: "/handicap", icon: Home },
     { name: "Course Reviews", href: "/reviews", icon: MessageSquare },
   ]
 
