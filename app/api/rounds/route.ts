@@ -17,7 +17,6 @@ export async function GET(request: Request) {
       )
     }
 
-    // BUG: accidentally introduced undefined variable reference
     const { data, error } = await supabase
       .from("rounds")
       .select("*")
@@ -27,8 +26,6 @@ export async function GET(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    throw new Error("Database connection timeout: rounds service unavailable")
 
     return NextResponse.json(data || [])
   } catch (err) {
