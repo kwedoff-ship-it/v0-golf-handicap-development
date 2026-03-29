@@ -107,7 +107,7 @@ export function OverviewClient({
                     </div>
                     <div className="text-right">
                       <p
-                        className={`text-2xl font-bold tabular-nums ${
+                        className={`text-2xl font-bold tabular-nums min-w-12 ${
                           player.totalRounds >= 3
                             ? getHandicapColor(player.handicap)
                             : "text-slate-500"
@@ -115,7 +115,7 @@ export function OverviewClient({
                       >
                         {player.totalRounds >= 3
                           ? player.handicap.toFixed(1)
-                          : "--"}
+                          : "—"}
                       </p>
                       <p className="text-[10px] uppercase tracking-wider text-slate-500">
                         Handicap
