@@ -1,10 +1,5 @@
 "use client"
 
-import { FFmpeg } from "@ffmpeg/ffmpeg"
-import { fetchFile, toBlobURL } from "@ffmpeg/util"
-
-let ffmpeg: FFmpeg | null = null
-
 export interface ConversionProgress {
   stage: "loading" | "converting" | "complete" | "error"
   progress: number // 0-100
@@ -12,6 +7,10 @@ export interface ConversionProgress {
 }
 
 export type ProgressCallback = (progress: ConversionProgress) => void
+
+// Store FFmpeg instance
+let ffmpegInstance: any = null
+let ffmpegLoaded = false
 
 /**
  * Validates video duration (max 30 seconds)
@@ -67,36 +66,78 @@ export function needsConversion(file: File): boolean {
 }
 
 /**
- * Loads FFmpeg WASM if not already loaded
+ * Dynamically imports FFmpeg from CDN and loads it
  */
-async function loadFFmpeg(onProgress: ProgressCallback): Promise<FFmpeg> {
-  if (ffmpeg && ffmpeg.loaded) {
-    return ffmpeg
+async function loadFFmpeg(onProgress: ProgressCallback): Promise<any> {
+  if (ffmpegInstance && ffmpegLoaded) {
+    return ffmpegInstance
   }
   
   onProgress({
     stage: "loading",
-    progress: 0,
+    progress: 10,
     message: "Loading video converter..."
   })
-  
-  ffmpeg = new FFmpeg()
-  
-  // Load from CDN
-  const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm"
-  
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-  })
-  
-  onProgress({
-    stage: "loading",
-    progress: 100,
-    message: "Video converter ready"
-  })
-  
-  return ffmpeg
+
+  try {
+    // Dynamically import ffmpeg
+    const { FFmpeg } = await import("@ffmpeg/ffmpeg")
+    const { toBlobURL, fetchFile } = await import("@ffmpeg/util")
+    
+    ffmpegInstance = new FFmpeg()
+    
+    // Store fetchFile for later use
+    ;(ffmpegInstance as any)._fetchFile = fetchFile
+    
+    onProgress({
+      stage: "loading",
+      progress: 30,
+      message: "Downloading converter components..."
+    })
+    
+    // Use unpkg CDN for the core files
+    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd"
+    
+    const coreURL = await toBlobURL(
+      `${baseURL}/ffmpeg-core.js`,
+      "text/javascript"
+    )
+    
+    onProgress({
+      stage: "loading",
+      progress: 50,
+      message: "Loading WebAssembly module..."
+    })
+    
+    const wasmURL = await toBlobURL(
+      `${baseURL}/ffmpeg-core.wasm`,
+      "application/wasm"
+    )
+    
+    onProgress({
+      stage: "loading",
+      progress: 70,
+      message: "Initializing converter..."
+    })
+    
+    await ffmpegInstance.load({
+      coreURL,
+      wasmURL,
+    })
+    
+    ffmpegLoaded = true
+    
+    onProgress({
+      stage: "loading",
+      progress: 100,
+      message: "Video converter ready"
+    })
+    
+    return ffmpegInstance
+  } catch (error) {
+    console.error("[v0] FFmpeg load error:", error)
+    throw new Error("Failed to load video converter. Please try again.")
+  }
 }
 
 /**
@@ -107,6 +148,7 @@ export async function convertToMp4(
   onProgress: ProgressCallback
 ): Promise<File> {
   const ff = await loadFFmpeg(onProgress)
+  const fetchFile = ff._fetchFile
   
   const inputName = "input" + getExtension(file.name)
   const outputName = "output.mp4"
@@ -117,50 +159,62 @@ export async function convertToMp4(
     message: "Preparing video for conversion..."
   })
   
-  // Write input file to FFmpeg virtual filesystem
-  await ff.writeFile(inputName, await fetchFile(file))
-  
-  // Set up progress tracking
-  ff.on("progress", ({ progress }) => {
-    onProgress({
-      stage: "converting",
-      progress: Math.round(progress * 100),
-      message: `Converting: ${Math.round(progress * 100)}%`
+  try {
+    // Write input file to FFmpeg virtual filesystem
+    const fileData = await fetchFile(file)
+    await ff.writeFile(inputName, fileData)
+    
+    // Set up progress tracking
+    ff.on("progress", ({ progress }: { progress: number }) => {
+      const percent = Math.min(Math.round(progress * 100), 99)
+      onProgress({
+        stage: "converting",
+        progress: percent,
+        message: `Converting: ${percent}%`
+      })
     })
-  })
-  
-  // Convert to MP4 with H.264 codec
-  // Using fast preset for quicker conversion on mobile
-  await ff.exec([
-    "-i", inputName,
-    "-c:v", "libx264",
-    "-preset", "ultrafast",
-    "-crf", "28", // Good balance of quality and speed
-    "-c:a", "aac",
-    "-b:a", "128k",
-    "-movflags", "+faststart", // Enable streaming
-    "-y",
-    outputName
-  ])
-  
-  // Read output file
-  const data = await ff.readFile(outputName)
-  
-  // Clean up
-  await ff.deleteFile(inputName)
-  await ff.deleteFile(outputName)
-  
-  onProgress({
-    stage: "complete",
-    progress: 100,
-    message: "Conversion complete!"
-  })
-  
-  // Create new File object
-  const blob = new Blob([data], { type: "video/mp4" })
-  const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".mp4"
-  
-  return new File([blob], newFileName, { type: "video/mp4" })
+    
+    // Convert to MP4 with H.264 codec
+    // Using ultrafast preset for quicker conversion on mobile
+    await ff.exec([
+      "-i", inputName,
+      "-c:v", "libx264",
+      "-preset", "ultrafast",
+      "-crf", "28", // Good balance of quality and speed
+      "-c:a", "aac",
+      "-b:a", "128k",
+      "-movflags", "+faststart", // Enable streaming
+      "-y",
+      outputName
+    ])
+    
+    // Read output file
+    const data = await ff.readFile(outputName)
+    
+    // Clean up
+    try {
+      await ff.deleteFile(inputName)
+      await ff.deleteFile(outputName)
+    } catch {
+      // Ignore cleanup errors
+    }
+    
+    onProgress({
+      stage: "complete",
+      progress: 100,
+      message: "Conversion complete!"
+    })
+    
+    // Create new File object
+    const uint8Array = data instanceof Uint8Array ? data : new Uint8Array(data)
+    const blob = new Blob([uint8Array], { type: "video/mp4" })
+    const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".mp4"
+    
+    return new File([blob], newFileName, { type: "video/mp4" })
+  } catch (error) {
+    console.error("[v0] Conversion error:", error)
+    throw new Error("Video conversion failed. The video may be in an unsupported format.")
+  }
 }
 
 function getExtension(filename: string): string {
