@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { ArrowLeft, Upload, Play, Pause, RotateCcw, Save } from "lucide-react"
+import { ArrowLeft, Upload, Play, Pause, RotateCcw, Save, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { updateSwingAnalysisVideo, updateSwingAnalysisNotes } from "@/app/actions/swing-analysis"
@@ -37,6 +37,10 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
   const [savingNotes, setSavingNotes] = useState(false)
   const [activePhase, setActivePhase] = useState<number | null>(null)
   const animationRef = useRef<number | null>(null)
+  const [proVideoError, setProVideoError] = useState<string | null>(null)
+  const [personalVideoError, setPersonalVideoError] = useState<string | null>(null)
+  const [proVideoReady, setProVideoReady] = useState(false)
+  const [personalVideoReady, setPersonalVideoReady] = useState(false)
 
   const syncVideosToSlider = useCallback(
     (value: number) => {
@@ -194,7 +198,41 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
     }
   }
 
+  // Video error handlers
+  const handleProVideoError = () => {
+    console.log("[v0] Pro video error - could not decode")
+    setProVideoError("This video format cannot be played in your browser. Try converting to MP4 (H.264) format.")
+    setProVideoReady(false)
+  }
+
+  const handlePersonalVideoError = () => {
+    console.log("[v0] Personal video error - could not decode")
+    setPersonalVideoError("This video format cannot be played in your browser. Try converting to MP4 (H.264) format.")
+    setPersonalVideoReady(false)
+  }
+
+  const handleProVideoCanPlay = () => {
+    console.log("[v0] Pro video ready to play")
+    setProVideoError(null)
+    setProVideoReady(true)
+  }
+
+  const handlePersonalVideoCanPlay = () => {
+    console.log("[v0] Personal video ready to play")
+    setPersonalVideoError(null)
+    setPersonalVideoReady(true)
+  }
+
+  // Reset video states when analysis changes
+  useEffect(() => {
+    setProVideoError(null)
+    setPersonalVideoError(null)
+    setProVideoReady(false)
+    setPersonalVideoReady(false)
+  }, [analysis.id])
+
   const hasAnyVideo = analysis.pro_video_url || analysis.personal_video_url
+  const hasPlayableVideo = (analysis.pro_video_url && proVideoReady) || (analysis.personal_video_url && personalVideoReady)
 
   return (
     <div className="space-y-6">
@@ -237,7 +275,15 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
                   playsInline
                   preload="auto"
                   onLoadedMetadata={(e) => setProDuration(e.currentTarget.duration)}
+                  onCanPlay={handleProVideoCanPlay}
+                  onError={handleProVideoError}
                 />
+                {proVideoError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4">
+                    <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
+                    <p className="text-amber-400 text-sm text-center">{proVideoError}</p>
+                  </div>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -282,7 +328,15 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
                   playsInline
                   preload="auto"
                   onLoadedMetadata={(e) => setPersonalDuration(e.currentTarget.duration)}
+                  onCanPlay={handlePersonalVideoCanPlay}
+                  onError={handlePersonalVideoError}
                 />
+                {personalVideoError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4">
+                    <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
+                    <p className="text-amber-400 text-sm text-center">{personalVideoError}</p>
+                  </div>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -309,8 +363,36 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
         </Card>
       </div>
 
+      {/* Message when videos exist but can't be played */}
+      {hasAnyVideo && !hasPlayableVideo && (proVideoError || personalVideoError) && (
+        <Card className="bg-amber-900/20 border-amber-700/50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-amber-400 font-medium">Video Playback Issue</p>
+                <p className="text-amber-400/80 text-sm mt-1">
+                  The uploaded video(s) cannot be played in your browser. This usually happens with iPhone videos using HEVC codec.
+                </p>
+                <p className="text-amber-400/80 text-sm mt-2">
+                  <strong>To fix:</strong> Convert your video to MP4 (H.264) format using a free tool like{" "}
+                  <a href="https://handbrake.fr/" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
+                    HandBrake
+                  </a>{" "}
+                  or{" "}
+                  <a href="https://cloudconvert.com/mov-to-mp4" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-300">
+                    CloudConvert
+                  </a>
+                  , then re-upload.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Playback controls and phase slider */}
-      {hasAnyVideo && (
+      {hasPlayableVideo && (
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="pt-6 space-y-4">
             {/* Play / Pause / Reset */}
