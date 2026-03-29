@@ -67,7 +67,7 @@ export async function getReviewStatsByCourse(courseName: string): Promise<Course
     const { data, error } = await supabase
       .from("course_reviews")
       .select("*")
-      .ilike("course_name", courseName)
+      .ilike("course_name", `%${courseName}%`)
       .order("created_at", { ascending: false })
 
     if (error) throw error
@@ -79,7 +79,7 @@ export async function getReviewStatsByCourse(courseName: string): Promise<Course
     const avgOverall = reviews.reduce((sum, r) => sum + r.overall_rating, 0) / reviews.length
 
     return {
-      course_name: courseName,
+      course_name: reviews[0].course_name,
       total_reviews: reviews.length,
       avg_difficulty: Math.round(avgDifficulty * 10) / 10,
       avg_overall: Math.round(avgOverall * 10) / 10,
