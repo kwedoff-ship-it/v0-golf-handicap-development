@@ -457,7 +457,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
 
       {/* Side-by-side video panels - optimized for vertical/portrait phone videos */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-2 gap-3 max-w-md">
+        <div className="grid grid-cols-2 gap-3 max-w-2xl">
         {/* Pro swing panel */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-700">
@@ -467,7 +467,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             </h3>
           </div>
           {analysis.pro_video_url ? (
-            <div className="relative aspect-[3/4] max-h-[400px] bg-black">
+            <div className="relative aspect-[3/4] max-h-[500px] bg-black">
               <video
                 ref={proVideoRef}
                 src={analysis.pro_video_url}
@@ -505,7 +505,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             <button
               onClick={() => handleVideoUpload("pro")}
               disabled={uploadingPro}
-              className="w-full aspect-[3/4] max-h-[400px] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
+              className="w-full aspect-[3/4] max-h-[500px] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
             >
               <Upload className="h-8 w-8 text-slate-500" />
               <span className="text-slate-400 text-sm text-center px-2">
@@ -525,7 +525,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             </h3>
           </div>
           {analysis.personal_video_url ? (
-            <div className="relative aspect-[3/4] max-h-[400px] bg-black">
+            <div className="relative aspect-[3/4] max-h-[500px] bg-black">
               <video
                 ref={personalVideoRef}
                 src={analysis.personal_video_url}
@@ -563,7 +563,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             <button
               onClick={() => handleVideoUpload("personal")}
               disabled={uploadingPersonal}
-              className="w-full aspect-[3/4] max-h-[400px] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
+              className="w-full aspect-[3/4] max-h-[500px] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
             >
               <Upload className="h-8 w-8 text-slate-500" />
               <span className="text-slate-400 text-sm text-center px-2">
