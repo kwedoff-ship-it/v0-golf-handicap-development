@@ -1,8 +1,6 @@
 "use client"
 
-import type { Pose, Keypoint } from "@tensorflow-models/pose-detection"
-
-// Swing phase definitions with detection criteria
+// Swing phase definitions
 export const SWING_PHASES = [
   { id: "address", label: "Address", description: "Setup position over the ball" },
   { id: "takeaway", label: "Takeaway", description: "Club moves away from ball" },
@@ -13,12 +11,12 @@ export const SWING_PHASES = [
   { id: "finish", label: "Finish", description: "Full finish position" },
 ] as const
 
-export type SwingPhaseId = typeof SWING_PHASES[number]["id"]
+export type SwingPhaseId = (typeof SWING_PHASES)[number]["id"]
 
 export interface PhaseTimestamp {
   phaseId: SwingPhaseId
-  timestamp: number // in seconds
-  confidence: number // 0-1
+  timestamp: number
+  confidence: number
 }
 
 export interface VideoPhaseMarkers {
@@ -33,7 +31,15 @@ export interface DetectionProgress {
   message: string
 }
 
-// Keypoint indices for MoveNet (COCO format)
+// Keypoint interface
+interface Keypoint {
+  x: number
+  y: number
+  score: number
+  name?: string
+}
+
+// MoveNet keypoint indices
 const KEYPOINTS = {
   NOSE: 0,
   LEFT_EYE: 1,
@@ -54,194 +60,250 @@ const KEYPOINTS = {
   RIGHT_ANKLE: 16,
 }
 
-// Helper to get keypoint by name
-function getKeypoint(pose: Pose, name: keyof typeof KEYPOINTS): Keypoint | null {
-  const kp = pose.keypoints[KEYPOINTS[name]]
-  return kp && kp.score && kp.score > 0.3 ? kp : null
+function getKeypoint(keypoints: Keypoint[], index: number): Keypoint | null {
+  const kp = keypoints[index]
+  return kp && kp.score > 0.3 ? kp : null
 }
 
-// Calculate angle between three points
 function calculateAngle(p1: Keypoint, p2: Keypoint, p3: Keypoint): number {
-  const radians = Math.atan2(p3.y - p2.y, p3.x - p2.x) - Math.atan2(p1.y - p2.y, p1.x - p2.x)
-  let angle = Math.abs(radians * 180 / Math.PI)
+  const radians =
+    Math.atan2(p3.y - p2.y, p3.x - p2.x) - Math.atan2(p1.y - p2.y, p1.x - p2.x)
+  let angle = Math.abs((radians * 180) / Math.PI)
   if (angle > 180) angle = 360 - angle
   return angle
 }
 
-// Calculate vertical position ratio (0 = top of frame, 1 = bottom)
-function getVerticalRatio(kp: Keypoint, height: number): number {
-  return kp.y / height
-}
-
-// Calculate horizontal position ratio (0 = left, 1 = right)
-function getHorizontalRatio(kp: Keypoint, width: number): number {
-  return kp.x / width
-}
-
-// Analyze pose to determine swing characteristics
 interface SwingMetrics {
-  leftWristHeight: number // 0-1, higher = hands up
+  leftWristHeight: number
   rightWristHeight: number
-  leftWristHorizontal: number // 0-1, position left to right
-  rightWristHorizontal: number
-  shoulderRotation: number // angle of shoulder line
-  hipRotation: number // angle of hip line
+  shoulderRotation: number
   leftElbowAngle: number
   rightElbowAngle: number
-  torsoLean: number // forward/backward lean
 }
 
-function analyzeSwingPose(pose: Pose, width: number, height: number): SwingMetrics | null {
-  const leftWrist = getKeypoint(pose, "LEFT_WRIST")
-  const rightWrist = getKeypoint(pose, "RIGHT_WRIST")
-  const leftShoulder = getKeypoint(pose, "LEFT_SHOULDER")
-  const rightShoulder = getKeypoint(pose, "RIGHT_SHOULDER")
-  const leftHip = getKeypoint(pose, "LEFT_HIP")
-  const rightHip = getKeypoint(pose, "RIGHT_HIP")
-  const leftElbow = getKeypoint(pose, "LEFT_ELBOW")
-  const rightElbow = getKeypoint(pose, "RIGHT_ELBOW")
+function analyzeSwingPose(
+  keypoints: Keypoint[],
+  width: number,
+  height: number
+): SwingMetrics | null {
+  const leftWrist = getKeypoint(keypoints, KEYPOINTS.LEFT_WRIST)
+  const rightWrist = getKeypoint(keypoints, KEYPOINTS.RIGHT_WRIST)
+  const leftShoulder = getKeypoint(keypoints, KEYPOINTS.LEFT_SHOULDER)
+  const rightShoulder = getKeypoint(keypoints, KEYPOINTS.RIGHT_SHOULDER)
+  const leftElbow = getKeypoint(keypoints, KEYPOINTS.LEFT_ELBOW)
+  const rightElbow = getKeypoint(keypoints, KEYPOINTS.RIGHT_ELBOW)
 
-  // Need minimum keypoints to analyze
   if (!leftWrist || !rightWrist || !leftShoulder || !rightShoulder) {
     return null
   }
 
-  const metrics: SwingMetrics = {
-    leftWristHeight: 1 - getVerticalRatio(leftWrist, height),
-    rightWristHeight: 1 - getVerticalRatio(rightWrist, height),
-    leftWristHorizontal: getHorizontalRatio(leftWrist, width),
-    rightWristHorizontal: getHorizontalRatio(rightWrist, width),
-    shoulderRotation: Math.atan2(
-      rightShoulder.y - leftShoulder.y,
-      rightShoulder.x - leftShoulder.x
-    ) * 180 / Math.PI,
-    hipRotation: leftHip && rightHip ? Math.atan2(
-      rightHip.y - leftHip.y,
-      rightHip.x - leftHip.x
-    ) * 180 / Math.PI : 0,
-    leftElbowAngle: leftElbow ? calculateAngle(leftShoulder, leftElbow, leftWrist) : 180,
-    rightElbowAngle: rightElbow ? calculateAngle(rightShoulder, rightElbow, rightWrist) : 180,
-    torsoLean: leftHip && rightHip ? 
-      ((leftShoulder.x + rightShoulder.x) / 2 - (leftHip.x + rightHip.x) / 2) / width : 0,
+  return {
+    leftWristHeight: 1 - leftWrist.y / height,
+    rightWristHeight: 1 - rightWrist.y / height,
+    shoulderRotation:
+      (Math.atan2(
+        rightShoulder.y - leftShoulder.y,
+        rightShoulder.x - leftShoulder.x
+      ) *
+        180) /
+      Math.PI,
+    leftElbowAngle:
+      leftElbow ? calculateAngle(leftShoulder, leftElbow, leftWrist) : 180,
+    rightElbowAngle:
+      rightElbow ? calculateAngle(rightShoulder, rightElbow, rightWrist) : 180,
   }
-
-  return metrics
 }
 
-// Determine swing phase from metrics
 function detectPhaseFromMetrics(
   metrics: SwingMetrics,
   prevMetrics: SwingMetrics | null,
   currentPhase: SwingPhaseId
 ): { phase: SwingPhaseId; confidence: number } {
-  const avgWristHeight = (metrics.leftWristHeight + metrics.rightWristHeight) / 2
-  const avgWristHorizontal = (metrics.leftWristHorizontal + metrics.rightWristHorizontal) / 2
-  
-  // Phase detection logic based on body position
-  // Address: Hands low, relatively centered, still position
+  const avgWristHeight =
+    (metrics.leftWristHeight + metrics.rightWristHeight) / 2
+
+  // Address
   if (avgWristHeight < 0.45 && Math.abs(metrics.shoulderRotation) < 15) {
     if (currentPhase === "address" || currentPhase === "takeaway") {
       return { phase: "address", confidence: 0.8 }
     }
   }
 
-  // Takeaway: Hands starting to move back/up, slight shoulder turn
-  if (avgWristHeight > 0.35 && avgWristHeight < 0.55 && 
-      Math.abs(metrics.shoulderRotation) > 5 && Math.abs(metrics.shoulderRotation) < 30) {
+  // Takeaway
+  if (
+    avgWristHeight > 0.35 &&
+    avgWristHeight < 0.55 &&
+    Math.abs(metrics.shoulderRotation) > 5 &&
+    Math.abs(metrics.shoulderRotation) < 30
+  ) {
     if (currentPhase === "address" || currentPhase === "takeaway") {
       return { phase: "takeaway", confidence: 0.7 }
     }
   }
 
-  // Top of backswing: Hands high, significant shoulder turn
+  // Top of backswing
   if (avgWristHeight > 0.55 && Math.abs(metrics.shoulderRotation) > 20) {
-    if (currentPhase === "takeaway" || currentPhase === "top" || currentPhase === "address") {
+    if (
+      currentPhase === "takeaway" ||
+      currentPhase === "top" ||
+      currentPhase === "address"
+    ) {
       return { phase: "top", confidence: 0.85 }
     }
   }
 
-  // Downswing: Hands coming down, shoulder starting to unwind
-  if (prevMetrics && avgWristHeight < prevMetrics.leftWristHeight && 
-      avgWristHeight > 0.4 && avgWristHeight < 0.65) {
+  // Downswing
+  if (
+    prevMetrics &&
+    avgWristHeight < prevMetrics.leftWristHeight &&
+    avgWristHeight > 0.4 &&
+    avgWristHeight < 0.65
+  ) {
     if (currentPhase === "top" || currentPhase === "downswing") {
       return { phase: "downswing", confidence: 0.75 }
     }
   }
 
-  // Impact: Hands low, near center, arms extended
-  if (avgWristHeight < 0.45 && avgWristHeight > 0.25 &&
-      metrics.leftElbowAngle > 150 && metrics.rightElbowAngle > 140) {
+  // Impact
+  if (
+    avgWristHeight < 0.45 &&
+    avgWristHeight > 0.25 &&
+    metrics.leftElbowAngle > 150
+  ) {
     if (currentPhase === "downswing" || currentPhase === "impact") {
       return { phase: "impact", confidence: 0.8 }
     }
   }
 
-  // Follow through: Hands moving up and forward after impact
-  if (prevMetrics && avgWristHeight > 0.45 && 
-      avgWristHeight > prevMetrics.leftWristHeight &&
-      currentPhase === "impact") {
+  // Follow through
+  if (
+    prevMetrics &&
+    avgWristHeight > 0.45 &&
+    avgWristHeight > prevMetrics.leftWristHeight &&
+    currentPhase === "impact"
+  ) {
     return { phase: "followthrough", confidence: 0.7 }
   }
 
-  // Finish: Hands high, facing target
+  // Finish
   if (avgWristHeight > 0.6 && Math.abs(metrics.shoulderRotation) > 15) {
     if (currentPhase === "followthrough" || currentPhase === "finish") {
       return { phase: "finish", confidence: 0.8 }
     }
   }
 
-  // Default: stay in current phase
   return { phase: currentPhase, confidence: 0.5 }
 }
 
-// Main function to analyze a video and detect swing phases
-export async function detectSwingPhases(
-  videoElement: HTMLVideoElement,
-  onProgress?: (progress: DetectionProgress) => void
-): Promise<PhaseTimestamp[]> {
-  onProgress?.({ stage: "loading", progress: 0, message: "Loading pose detection model..." })
+// Load TensorFlow.js from CDN
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve()
+      return
+    }
+    const script = document.createElement("script")
+    script.src = src
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error(`Failed to load ${src}`))
+    document.head.appendChild(script)
+  })
+}
 
-  // Dynamic imports to avoid SSR issues
-  const tf = await import("@tensorflow/tfjs-core")
-  await import("@tensorflow/tfjs-backend-webgl")
-  const poseDetection = await import("@tensorflow-models/pose-detection")
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let detector: any = null
+
+async function loadModel(
+  onProgress?: (progress: DetectionProgress) => void
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
+  if (detector) return detector
+
+  onProgress?.({
+    stage: "loading",
+    progress: 10,
+    message: "Loading TensorFlow.js...",
+  })
+
+  // Load TensorFlow.js core from CDN
+  await loadScript(
+    "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.20.0/dist/tf-core.min.js"
+  )
+  await loadScript(
+    "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.20.0/dist/tf-backend-webgl.min.js"
+  )
+
+  onProgress?.({
+    stage: "loading",
+    progress: 30,
+    message: "Loading pose detection model...",
+  })
+
+  // Load pose detection
+  await loadScript(
+    "https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"
+  )
+
+  onProgress?.({
+    stage: "loading",
+    progress: 50,
+    message: "Initializing MoveNet...",
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tf = (window as any).tf
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const poseDetection = (window as any).poseDetection
 
   await tf.ready()
   await tf.setBackend("webgl")
 
-  onProgress?.({ stage: "loading", progress: 30, message: "Initializing MoveNet..." })
-
-  // Create detector
-  const detector = await poseDetection.createDetector(
+  detector = await poseDetection.createDetector(
     poseDetection.SupportedModels.MoveNet,
     {
       modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER,
     }
   )
 
-  onProgress?.({ stage: "analyzing", progress: 40, message: "Analyzing video frames..." })
+  onProgress?.({
+    stage: "loading",
+    progress: 60,
+    message: "Model loaded!",
+  })
+
+  return detector
+}
+
+export async function detectSwingPhases(
+  videoElement: HTMLVideoElement,
+  onProgress?: (progress: DetectionProgress) => void
+): Promise<PhaseTimestamp[]> {
+  const det = await loadModel(onProgress)
+
+  onProgress?.({
+    stage: "analyzing",
+    progress: 60,
+    message: "Analyzing video frames...",
+  })
 
   const duration = videoElement.duration
-  const fps = 15 // Sample rate - higher = more accurate but slower
+  const fps = 10
   const frameCount = Math.floor(duration * fps)
-  
+
   const phases: PhaseTimestamp[] = []
   let currentPhase: SwingPhaseId = "address"
   let prevMetrics: SwingMetrics | null = null
   let lastDetectedPhase: SwingPhaseId = "address"
 
-  // Create a canvas for frame extraction
   const canvas = document.createElement("canvas")
   canvas.width = videoElement.videoWidth
   canvas.height = videoElement.videoHeight
   const ctx = canvas.getContext("2d")!
 
-  // Analyze each frame
   for (let i = 0; i < frameCount; i++) {
     const time = i / fps
     videoElement.currentTime = time
 
-    // Wait for video to seek
     await new Promise<void>((resolve) => {
       const onSeeked = () => {
         videoElement.removeEventListener("seeked", onSeeked)
@@ -250,19 +312,25 @@ export async function detectSwingPhases(
       videoElement.addEventListener("seeked", onSeeked)
     })
 
-    // Draw frame to canvas
     ctx.drawImage(videoElement, 0, 0)
 
-    // Detect pose
-    const poses = await detector.estimatePoses(canvas)
-    
+    const poses = await det.estimatePoses(canvas)
+
     if (poses.length > 0) {
-      const metrics = analyzeSwingPose(poses[0], canvas.width, canvas.height)
-      
+      const pose = poses[0]
+      const metrics = analyzeSwingPose(
+        pose.keypoints,
+        canvas.width,
+        canvas.height
+      )
+
       if (metrics) {
-        const { phase, confidence } = detectPhaseFromMetrics(metrics, prevMetrics, currentPhase)
-        
-        // If phase changed, record it
+        const { phase, confidence } = detectPhaseFromMetrics(
+          metrics,
+          prevMetrics,
+          currentPhase
+        )
+
         if (phase !== lastDetectedPhase) {
           phases.push({
             phaseId: phase,
@@ -272,78 +340,89 @@ export async function detectSwingPhases(
           lastDetectedPhase = phase
           currentPhase = phase
         }
-        
+
         prevMetrics = metrics
       }
     }
 
-    // Update progress
-    const progress = 40 + Math.floor((i / frameCount) * 55)
-    onProgress?.({ 
-      stage: "analyzing", 
-      progress, 
-      message: `Analyzing frame ${i + 1} of ${frameCount}...` 
+    const progress = 60 + Math.floor((i / frameCount) * 35)
+    onProgress?.({
+      stage: "analyzing",
+      progress,
+      message: `Analyzing frame ${i + 1} of ${frameCount}...`,
     })
   }
 
-  // Reset video
   videoElement.currentTime = 0
 
-  // Dispose detector
-  detector.dispose()
+  onProgress?.({
+    stage: "complete",
+    progress: 100,
+    message: "Analysis complete!",
+  })
 
-  onProgress?.({ stage: "complete", progress: 100, message: "Analysis complete!" })
-
-  // Ensure we have all phases (fill in missing ones with estimates)
-  const filledPhases = fillMissingPhases(phases, duration)
-
-  return filledPhases
+  return fillMissingPhases(phases, duration)
 }
 
-// Fill in any missing phases with estimated timestamps
-function fillMissingPhases(detectedPhases: PhaseTimestamp[], duration: number): PhaseTimestamp[] {
-  const phaseOrder: SwingPhaseId[] = ["address", "takeaway", "top", "downswing", "impact", "followthrough", "finish"]
+function fillMissingPhases(
+  detectedPhases: PhaseTimestamp[],
+  duration: number
+): PhaseTimestamp[] {
+  const phaseOrder: SwingPhaseId[] = [
+    "address",
+    "takeaway",
+    "top",
+    "downswing",
+    "impact",
+    "followthrough",
+    "finish",
+  ]
   const result: PhaseTimestamp[] = []
 
-  // Create a map of detected phases
   const detectedMap = new Map<SwingPhaseId, PhaseTimestamp>()
   for (const phase of detectedPhases) {
-    if (!detectedMap.has(phase.phaseId) || phase.confidence > (detectedMap.get(phase.phaseId)?.confidence ?? 0)) {
+    if (
+      !detectedMap.has(phase.phaseId) ||
+      phase.confidence > (detectedMap.get(phase.phaseId)?.confidence ?? 0)
+    ) {
       detectedMap.set(phase.phaseId, phase)
     }
   }
 
-  // Fill in phases
   for (let i = 0; i < phaseOrder.length; i++) {
     const phaseId = phaseOrder[i]
     const detected = detectedMap.get(phaseId)
-    
+
     if (detected) {
       result.push(detected)
     } else {
-      // Estimate based on typical swing timing
       const estimatedPosition = i / (phaseOrder.length - 1)
       result.push({
         phaseId,
         timestamp: estimatedPosition * duration,
-        confidence: 0.3, // Low confidence for estimated
+        confidence: 0.3,
       })
     }
   }
 
-  // Sort by timestamp
   result.sort((a, b) => a.timestamp - b.timestamp)
-
   return result
 }
 
-// Export for manual marker creation
 export function createEmptyPhaseMarkers(duration: number): PhaseTimestamp[] {
-  const phaseOrder: SwingPhaseId[] = ["address", "takeaway", "top", "downswing", "impact", "followthrough", "finish"]
-  
+  const phaseOrder: SwingPhaseId[] = [
+    "address",
+    "takeaway",
+    "top",
+    "downswing",
+    "impact",
+    "followthrough",
+    "finish",
+  ]
+
   return phaseOrder.map((phaseId, i) => ({
     phaseId,
     timestamp: (i / (phaseOrder.length - 1)) * duration,
-    confidence: 0, // 0 = not yet set by user
+    confidence: 0,
   }))
 }
