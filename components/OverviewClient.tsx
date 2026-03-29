@@ -95,36 +95,35 @@ export function OverviewClient({
                 <div className="p-5">
                   {/* Player name and handicap */}
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">
+                    <div className="flex-1 min-w-0 pr-12">
+                      <h3 className="text-lg font-semibold text-white truncate">
                         {player.playerName}
                       </h3>
                       {player.favoriteCourse && (
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
                           Home: {player.favoriteCourse}
                         </p>
                       )}
-                    </div>
-                    <div className="text-right">
-                      {player.totalRounds >= 3 ? (
-                        <>
-                          <p
-                            className={`text-2xl font-bold tabular-nums ${getHandicapColor(player.handicap)}`}
-                          >
-                            {player.handicap.toFixed(1)}
-                          </p>
-                          <p className="text-[10px] uppercase tracking-wider text-slate-500">
-                            Handicap
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-xs text-slate-500">
+                      {player.totalRounds < 3 && (
+                        <p className="text-xs text-slate-500 mt-1">
                           {player.totalRounds === 0
-                            ? "No rounds"
+                            ? "No rounds yet"
                             : `${3 - player.totalRounds} more round${3 - player.totalRounds > 1 ? "s" : ""} needed`}
                         </p>
                       )}
                     </div>
+                    {player.totalRounds >= 3 && (
+                      <div className="text-right shrink-0">
+                        <p
+                          className={`text-2xl font-bold tabular-nums ${getHandicapColor(player.handicap)}`}
+                        >
+                          {player.handicap.toFixed(1)}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                          Handicap
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Stats row */}
