@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { ArrowLeft, Upload, Play, Pause, RotateCcw, Save, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Upload, Play, Pause, RotateCcw, Save, AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { updateSwingAnalysisVideo, updateSwingAnalysisNotes } from "@/app/actions/swing-analysis"
 import type { SwingAnalysis } from "@/app/actions/swing-analysis"
+import { validateVideoDuration, needsConversion, convertToMp4, type ConversionProgress } from "@/lib/video-converter"
 
 const SWING_PHASES = [
   { label: "Address", position: 0, description: "Setup position over the ball" },
@@ -41,6 +42,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
   const [personalVideoError, setPersonalVideoError] = useState<string | null>(null)
   const [proVideoReady, setProVideoReady] = useState(false)
   const [personalVideoReady, setPersonalVideoReady] = useState(false)
+  const [conversionProgress, setConversionProgress] = useState<ConversionProgress | null>(null)
 
   const syncVideosToSlider = useCallback(
     (value: number) => {
@@ -156,13 +158,40 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
     input.type = "file"
     input.accept = "video/mp4,video/quicktime,video/webm,video/avi,.mp4,.mov,.webm,.avi"
     input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
+      let file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
 
       const setUploading = type === "pro" ? setUploadingPro : setUploadingPersonal
       setUploading(true)
 
       try {
+        // Step 1: Validate video duration (max 30 seconds)
+        const durationCheck = await validateVideoDuration(file)
+        if (!durationCheck.valid) {
+          throw new Error(durationCheck.error)
+        }
+
+        // Step 2: Check if conversion is needed and convert
+        if (needsConversion(file)) {
+          setConversionProgress({
+            stage: "loading",
+            progress: 0,
+            message: "Preparing to convert video..."
+          })
+          
+          try {
+            file = await convertToMp4(file, (progress) => {
+              setConversionProgress(progress)
+            })
+          } catch (conversionError) {
+            console.error("Conversion error:", conversionError)
+            throw new Error("Failed to convert video. Please try converting to MP4 manually before uploading.")
+          } finally {
+            setConversionProgress(null)
+          }
+        }
+
+        // Step 3: Upload the file
         const formData = new FormData()
         formData.append("file", file)
         formData.append("analysisId", analysis.id)
@@ -181,6 +210,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
         alert(err instanceof Error ? err.message : "Upload failed")
       } finally {
         setUploading(false)
+        setConversionProgress(null)
       }
     }
     input.click()
@@ -236,6 +266,38 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
 
   return (
     <div className="space-y-6">
+      {/* Conversion Progress Overlay */}
+      {conversionProgress && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <Card className="bg-slate-800 border-slate-700 w-80">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-10 w-10 text-emerald-400 animate-spin" />
+                <div className="text-center">
+                  <p className="text-white font-medium">{conversionProgress.message}</p>
+                  <p className="text-slate-400 text-sm mt-1">
+                    {conversionProgress.stage === "loading" 
+                      ? "This may take a moment on first use..."
+                      : "Converting video for browser compatibility"}
+                  </p>
+                </div>
+                {conversionProgress.stage === "converting" && (
+                  <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-emerald-500 h-full transition-all duration-300"
+                      style={{ width: `${conversionProgress.progress}%` }}
+                    />
+                  </div>
+                )}
+                <p className="text-slate-500 text-xs text-center">
+                  Videos are automatically converted to MP4 for best compatibility
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button
@@ -303,7 +365,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
                 <span className="text-slate-400 text-sm">
                   {uploadingPro ? "Uploading..." : "Upload Pro Swing Video"}
                 </span>
-                <span className="text-slate-600 text-xs">MP4, MOV, WebM up to 50MB</span>
+                <span className="text-slate-600 text-xs">MP4, MOV, WebM (max 30 sec)</span>
               </button>
             )}
           </CardContent>
@@ -356,7 +418,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
                 <span className="text-slate-400 text-sm">
                   {uploadingPersonal ? "Uploading..." : "Upload Your Swing Video"}
                 </span>
-                <span className="text-slate-600 text-xs">MP4, MOV, WebM up to 50MB</span>
+                <span className="text-slate-600 text-xs">MP4, MOV, WebM (max 30 sec)</span>
               </button>
             )}
           </CardContent>
