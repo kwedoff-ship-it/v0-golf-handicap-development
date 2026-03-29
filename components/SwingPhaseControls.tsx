@@ -107,14 +107,21 @@ export function SwingPhaseControls({
 
   // Frame step forward/backward
   const stepFrame = (direction: "forward" | "backward") => {
+    // Pause videos first if playing
+    if (isPlaying) {
+      onPlayPause()
+    }
+    
     const frameTime = 1 / 30 // Assuming 30fps
     const delta = direction === "forward" ? frameTime : -frameTime
     
     if (proVideoRef.current) {
-      proVideoRef.current.currentTime = Math.max(0, proVideoRef.current.currentTime + delta)
+      const newTime = Math.max(0, Math.min(proVideoRef.current.duration, proVideoRef.current.currentTime + delta))
+      proVideoRef.current.currentTime = newTime
     }
     if (personalVideoRef.current) {
-      personalVideoRef.current.currentTime = Math.max(0, personalVideoRef.current.currentTime + delta)
+      const newTime = Math.max(0, Math.min(personalVideoRef.current.duration, personalVideoRef.current.currentTime + delta))
+      personalVideoRef.current.currentTime = newTime
     }
   }
 
