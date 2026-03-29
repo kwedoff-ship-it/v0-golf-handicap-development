@@ -75,27 +75,27 @@ export function OverviewClient({
                 key={player.playerId}
                 className="relative bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl shadow-xl overflow-hidden hover:border-slate-700 transition-colors"
               >
-                {/* Rank badge for top 3 */}
-                {index < 3 && player.totalRounds > 0 && (
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${
-                        index === 0
-                          ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                          : index === 1
-                            ? "bg-slate-400/20 text-slate-300 border border-slate-400/30"
-                            : "bg-amber-700/20 text-amber-500 border border-amber-700/30"
-                      }`}
-                    >
-                      {index + 1}
-                    </span>
-                  </div>
-                )}
-
                 <div className="p-5">
+                  {/* Rank badge for top 3 - inline positioned */}
+                  {index < 3 && player.totalRounds > 0 && (
+                    <div className="flex justify-end mb-2">
+                      <span
+                        className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${
+                          index === 0
+                            ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                            : index === 1
+                              ? "bg-slate-400/20 text-slate-300 border border-slate-400/30"
+                              : "bg-amber-700/20 text-amber-500 border border-amber-700/30"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Player name and handicap */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0 pr-12">
+                    <div className="flex-1 min-w-0 pr-4">
                       <h3 className="text-lg font-semibold text-white truncate">
                         {player.playerName}
                       </h3>
