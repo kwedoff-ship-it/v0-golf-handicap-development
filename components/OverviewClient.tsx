@@ -106,20 +106,24 @@ export function OverviewClient({
                       )}
                     </div>
                     <div className="text-right">
-                      <p
-                        className={`text-2xl font-bold tabular-nums min-w-12 ${
-                          player.totalRounds >= 3
-                            ? getHandicapColor(player.handicap)
-                            : "text-slate-500"
-                        }`}
-                      >
-                        {player.totalRounds >= 3
-                          ? player.handicap.toFixed(1)
-                          : "—"}
-                      </p>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-500">
-                        Handicap
-                      </p>
+                      {player.totalRounds >= 3 ? (
+                        <>
+                          <p
+                            className={`text-2xl font-bold tabular-nums ${getHandicapColor(player.handicap)}`}
+                          >
+                            {player.handicap.toFixed(1)}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                            Handicap
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-slate-500">
+                          {player.totalRounds === 0
+                            ? "No rounds"
+                            : `${3 - player.totalRounds} more round${3 - player.totalRounds > 1 ? "s" : ""} needed`}
+                        </p>
+                      )}
                     </div>
                   </div>
 
