@@ -24,11 +24,11 @@ function formatDate(dateStr: string | null): string {
 }
 
 function getHandicapColor(handicap: number): string {
-  if (handicap <= 5) return "text-emerald-400"
-  if (handicap <= 10) return "text-green-400"
-  if (handicap <= 15) return "text-yellow-400"
-  if (handicap <= 20) return "text-orange-400"
-  return "text-red-400"
+  if (handicap <= 5) return "text-cyan-400"      // Excellent - bright cyan
+  if (handicap <= 10) return "text-emerald-400"  // Very good - green
+  if (handicap <= 15) return "text-yellow-400"   // Good - yellow
+  if (handicap <= 20) return "text-orange-400"   // Average - orange
+  return "text-red-400"                          // High - red
 }
 
 export function OverviewClient({
