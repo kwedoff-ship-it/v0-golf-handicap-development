@@ -23,14 +23,15 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     try {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        (process.env.NEXT_PUBLIC_VERCEL_URL
-          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-          : window.location.origin)
+      // Use window.location.origin to get the current domain
+      // This ensures the redirect works correctly in all environments
+      const baseUrl = window.location.origin
+
+      console.log("[v0] Forgot password - using baseUrl:", baseUrl)
+      console.log("[v0] Forgot password - redirectTo:", `${baseUrl}/auth/callback?next=/auth/update-password&type=recovery`)
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${baseUrl}/auth/callback?next=/auth/update-password`,
+        redirectTo: `${baseUrl}/auth/callback?next=/auth/update-password&type=recovery`,
       })
       if (error) throw error
       setIsSubmitted(true)
