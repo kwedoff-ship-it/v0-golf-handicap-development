@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
   Play, Pause, RotateCcw, ChevronLeft, ChevronRight, 
-  Check, X, Gauge, Target, Wand2
+  Check, X, Gauge, Target, Wand2, Save
 } from "lucide-react"
 import { SWING_PHASES, type PhaseTimestamp, type SwingPhaseId } from "@/lib/pose-detector"
 
@@ -36,9 +36,25 @@ interface SwingPhaseControlsProps {
   // Active phase
   activePhaseIndex: number | null
   onPhaseClick: (phaseIndex: number) => void
+  
+  // Current time for scrubber
+  currentTime: number
+  onScrub: (time: number) => void
+  
+  // Save
+  onSavePhases: () => void
+  isSaving: boolean
+  hasUnsavedChanges: boolean
 }
 
 const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.5, 2]
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  const ms = Math.floor((seconds % 1) * 100)
+  return `${mins}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`
+}
 
 export function SwingPhaseControls({
   proVideoRef,
@@ -58,6 +74,11 @@ export function SwingPhaseControls({
   isDetecting,
   activePhaseIndex,
   onPhaseClick,
+  currentTime,
+  onScrub,
+  onSavePhases,
+  isSaving,
+  hasUnsavedChanges,
 }: SwingPhaseControlsProps) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const [markingPhase, setMarkingPhase] = useState<{
@@ -181,8 +202,9 @@ export function SwingPhaseControls({
               variant="outline"
               size="icon"
               onClick={() => stepFrame("backward")}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white h-9 w-9"
-              title="Previous frame"
+              disabled={isPlaying}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white h-9 w-9 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              title={isPlaying ? "Pause to step frames" : "Previous frame"}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -199,8 +221,9 @@ export function SwingPhaseControls({
               variant="outline"
               size="icon"
               onClick={() => stepFrame("forward")}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white h-9 w-9"
-              title="Next frame"
+              disabled={isPlaying}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white h-9 w-9 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              title={isPlaying ? "Pause to step frames" : "Next frame"}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -225,6 +248,37 @@ export function SwingPhaseControls({
               ))}
             </div>
           </div>
+          
+          {/* Save Button */}
+          <Button
+            onClick={onSavePhases}
+            disabled={isSaving || !hasUnsavedChanges}
+            className={`gap-2 ${
+              hasUnsavedChanges 
+                ? "bg-amber-600 hover:bg-amber-700 text-white" 
+                : "bg-slate-700 text-slate-400"
+            }`}
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? "Saving..." : hasUnsavedChanges ? "Save Phases" : "Saved"}
+          </Button>
+        </div>
+        
+        {/* Video Scrubber */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(Math.max(proDuration, personalDuration))}</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={Math.max(proDuration, personalDuration) || 1}
+            step={0.01}
+            value={currentTime}
+            onChange={(e) => onScrub(parseFloat(e.target.value))}
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
         </div>
 
         {/* AI Detection Buttons (when in AI mode) */}

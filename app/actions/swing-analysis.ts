@@ -3,6 +3,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
+export type PhaseMarker = {
+  phaseId: string
+  timestamp: number
+  confidence: number
+}
+
 export type SwingAnalysis = {
   id: string
   user_id: string
@@ -11,6 +17,8 @@ export type SwingAnalysis = {
   personal_video_url: string | null
   pro_player_name: string | null
   notes: string | null
+  pro_phases: PhaseMarker[] | null
+  personal_phases: PhaseMarker[] | null
   created_at: string
   updated_at: string
 }
@@ -110,6 +118,36 @@ export async function updateSwingAnalysisNotes(
   if (error) {
     console.error("Error updating notes:", error)
     throw new Error("Failed to update notes")
+  }
+
+  revalidatePath("/swing-analysis")
+}
+
+export async function saveSwingPhases(
+  analysisId: string,
+  proPhases: PhaseMarker[] | null,
+  personalPhases: PhaseMarker[] | null
+): Promise<void> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Not authenticated")
+
+  const { error } = await supabase
+    .from("swing_analyses")
+    .update({ 
+      pro_phases: proPhases, 
+      personal_phases: personalPhases,
+      updated_at: new Date().toISOString() 
+    })
+    .eq("id", analysisId)
+    .eq("user_id", user.id)
+
+  if (error) {
+    console.error("Error saving swing phases:", error)
+    throw new Error("Failed to save phases")
   }
 
   revalidatePath("/swing-analysis")

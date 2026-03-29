@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { ArrowLeft, Upload, Save, AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { updateSwingAnalysisVideo, updateSwingAnalysisNotes } from "@/app/actions/swing-analysis"
+import { updateSwingAnalysisVideo, updateSwingAnalysisNotes, saveSwingPhases } from "@/app/actions/swing-analysis"
 import type { SwingAnalysis } from "@/app/actions/swing-analysis"
 import { validateVideoDuration, needsConversion, convertToMp4, type ConversionProgress } from "@/lib/video-converter"
 import { 
@@ -58,22 +58,64 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
   const [isDetecting, setIsDetecting] = useState(false)
   const [detectingVideoType, setDetectingVideoType] = useState<"pro" | "personal" | null>(null)
   const [detectionProgress, setDetectionProgress] = useState<DetectionProgress | null>(null)
+  
+  // Scrubber/current time
+  const [currentTime, setCurrentTime] = useState(0)
+  
+  // Save state
+  const [isSavingPhases, setIsSavingPhases] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [initialProPhases, setInitialProPhases] = useState<string>("")
+  const [initialPersonalPhases, setInitialPersonalPhases] = useState<string>("")
 
   // Animation frame ref for playback sync
   const animationRef = useRef<number | null>(null)
 
-  // Initialize phase markers when video durations are known
+  // Load saved phases from analysis or initialize empty
   useEffect(() => {
     if (proDuration > 0 && proPhases.length === 0) {
-      setProPhases(createEmptyPhaseMarkers(proDuration))
+      if (analysis.pro_phases && analysis.pro_phases.length > 0) {
+        // Load saved phases
+        const savedPhases = analysis.pro_phases.map(p => ({
+          phaseId: p.phaseId as any,
+          timestamp: p.timestamp,
+          confidence: p.confidence
+        }))
+        setProPhases(savedPhases)
+        setInitialProPhases(JSON.stringify(savedPhases))
+      } else {
+        const empty = createEmptyPhaseMarkers(proDuration)
+        setProPhases(empty)
+        setInitialProPhases(JSON.stringify(empty))
+      }
     }
-  }, [proDuration, proPhases.length])
+  }, [proDuration, proPhases.length, analysis.pro_phases])
 
   useEffect(() => {
     if (personalDuration > 0 && personalPhases.length === 0) {
-      setPersonalPhases(createEmptyPhaseMarkers(personalDuration))
+      if (analysis.personal_phases && analysis.personal_phases.length > 0) {
+        // Load saved phases
+        const savedPhases = analysis.personal_phases.map(p => ({
+          phaseId: p.phaseId as any,
+          timestamp: p.timestamp,
+          confidence: p.confidence
+        }))
+        setPersonalPhases(savedPhases)
+        setInitialPersonalPhases(JSON.stringify(savedPhases))
+      } else {
+        const empty = createEmptyPhaseMarkers(personalDuration)
+        setPersonalPhases(empty)
+        setInitialPersonalPhases(JSON.stringify(empty))
+      }
     }
-  }, [personalDuration, personalPhases.length])
+  }, [personalDuration, personalPhases.length, analysis.personal_phases])
+  
+  // Track unsaved changes
+  useEffect(() => {
+    const proChanged = JSON.stringify(proPhases) !== initialProPhases
+    const personalChanged = JSON.stringify(personalPhases) !== initialPersonalPhases
+    setHasUnsavedChanges(proChanged || personalChanged)
+  }, [proPhases, personalPhases, initialProPhases, initialPersonalPhases])
 
   // Reset video states when analysis changes
   useEffect(() => {
@@ -131,14 +173,51 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
   const handleReset = () => {
     if (proVideoRef.current) proVideoRef.current.currentTime = 0
     if (personalVideoRef.current) personalVideoRef.current.currentTime = 0
+    setCurrentTime(0)
     setIsPlaying(false)
     proVideoRef.current?.pause()
     personalVideoRef.current?.pause()
     if (animationRef.current) cancelAnimationFrame(animationRef.current)
     setActivePhaseIndex(0)
   }
+  
+  // Scrub handler
+  const handleScrub = (time: number) => {
+    if (proVideoRef.current) proVideoRef.current.currentTime = time
+    if (personalVideoRef.current) personalVideoRef.current.currentTime = time
+    setCurrentTime(time)
+  }
+  
+  // Save phases to database
+  const handleSavePhases = async () => {
+    setIsSavingPhases(true)
+    try {
+      const proMarkers = proPhases.map(p => ({
+        phaseId: p.phaseId,
+        timestamp: p.timestamp,
+        confidence: p.confidence
+      }))
+      const personalMarkers = personalPhases.map(p => ({
+        phaseId: p.phaseId,
+        timestamp: p.timestamp,
+        confidence: p.confidence
+      }))
+      
+      await saveSwingPhases(analysis.id, proMarkers, personalMarkers)
+      
+      // Update initial state to reflect saved state
+      setInitialProPhases(JSON.stringify(proPhases))
+      setInitialPersonalPhases(JSON.stringify(personalPhases))
+      setHasUnsavedChanges(false)
+    } catch (err) {
+      console.error("Failed to save phases:", err)
+      alert("Failed to save phases. Please try again.")
+    } finally {
+      setIsSavingPhases(false)
+    }
+  }
 
-  // Sync playback and detect current phase
+  // Sync playback, detect current phase, and track current time
   useEffect(() => {
     if (!isPlaying) return
 
@@ -153,13 +232,15 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
         return
       }
 
-      const currentTime = refVideo.currentTime
+      const time = refVideo.currentTime
+      setCurrentTime(time)
+      
       const phases = refVideo === proVideoRef.current ? proPhases : personalPhases
 
       // Find current phase based on timestamp
       let currentPhaseIndex = 0
       for (let i = phases.length - 1; i >= 0; i--) {
-        if (phases[i] && currentTime >= phases[i].timestamp) {
+        if (phases[i] && time >= phases[i].timestamp) {
           currentPhaseIndex = i
           break
         }
@@ -385,7 +466,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             </h3>
           </div>
           {analysis.pro_video_url ? (
-            <div className="relative aspect-[9/16] bg-black">
+            <div className="relative aspect-[3/4] max-h-[400px] bg-black">
               <video
                 ref={proVideoRef}
                 src={analysis.pro_video_url}
@@ -423,7 +504,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             <button
               onClick={() => handleVideoUpload("pro")}
               disabled={uploadingPro}
-              className="w-full aspect-[9/16] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
+              className="w-full aspect-[3/4] max-h-[400px] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
             >
               <Upload className="h-8 w-8 text-slate-500" />
               <span className="text-slate-400 text-sm text-center px-2">
@@ -443,7 +524,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             </h3>
           </div>
           {analysis.personal_video_url ? (
-            <div className="relative aspect-[9/16] bg-black">
+            <div className="relative aspect-[3/4] max-h-[400px] bg-black">
               <video
                 ref={personalVideoRef}
                 src={analysis.personal_video_url}
@@ -481,7 +562,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
             <button
               onClick={() => handleVideoUpload("personal")}
               disabled={uploadingPersonal}
-              className="w-full aspect-[9/16] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
+              className="w-full aspect-[3/4] max-h-[400px] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
             >
               <Upload className="h-8 w-8 text-slate-500" />
               <span className="text-slate-400 text-sm text-center px-2">
@@ -541,6 +622,11 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
           isDetecting={isDetecting}
           activePhaseIndex={activePhaseIndex}
           onPhaseClick={handlePhaseClick}
+          currentTime={currentTime}
+          onScrub={handleScrub}
+          onSavePhases={handleSavePhases}
+          isSaving={isSavingPhases}
+          hasUnsavedChanges={hasUnsavedChanges}
         />
       )}
 
