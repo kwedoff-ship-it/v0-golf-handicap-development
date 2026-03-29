@@ -374,127 +374,123 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
         </div>
       </div>
 
-      {/* Side-by-side video panels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Side-by-side video panels - optimized for vertical/portrait phone videos */}
+      <div className="grid grid-cols-2 gap-3">
         {/* Pro swing panel */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-white text-base flex items-center gap-2">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-700">
+            <h3 className="text-white text-sm font-medium flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-blue-400" />
-              Pro Swing {analysis.pro_player_name && `(${analysis.pro_player_name})`}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analysis.pro_video_url ? (
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
-                <video
-                  ref={proVideoRef}
-                  src={analysis.pro_video_url}
-                  className="w-full h-full object-contain"
-                  muted
-                  playsInline
-                  preload="auto"
-                  crossOrigin="anonymous"
-                  onLoadedMetadata={(e) => setProDuration(e.currentTarget.duration)}
-                  onCanPlay={handleProVideoCanPlay}
-                  onError={handleProVideoError}
-                />
-                {proVideoError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4">
-                    <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
-                    <p className="text-amber-400 text-sm text-center">{proVideoError}</p>
-                  </div>
-                )}
-                {/* Current phase indicator */}
-                {activePhaseIndex !== null && proPhases[activePhaseIndex] && (
-                  <div className="absolute bottom-2 left-2 bg-blue-600/80 px-2 py-1 rounded text-xs text-white font-medium">
-                    {SWING_PHASES[activePhaseIndex].label}
-                  </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60"
-                  onClick={() => handleVideoUpload("pro")}
-                >
-                  Replace
-                </Button>
-              </div>
-            ) : (
-              <button
+              Pro {analysis.pro_player_name && `- ${analysis.pro_player_name}`}
+            </h3>
+          </div>
+          {analysis.pro_video_url ? (
+            <div className="relative aspect-[9/16] bg-black">
+              <video
+                ref={proVideoRef}
+                src={analysis.pro_video_url}
+                className="w-full h-full object-contain"
+                muted
+                playsInline
+                preload="auto"
+                crossOrigin="anonymous"
+                onLoadedMetadata={(e) => setProDuration(e.currentTarget.duration)}
+                onCanPlay={handleProVideoCanPlay}
+                onError={handleProVideoError}
+              />
+              {proVideoError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4">
+                  <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
+                  <p className="text-amber-400 text-sm text-center">{proVideoError}</p>
+                </div>
+              )}
+              {/* Current phase indicator */}
+              {activePhaseIndex !== null && proPhases[activePhaseIndex] && (
+                <div className="absolute bottom-2 left-2 bg-blue-600/80 px-2 py-1 rounded text-xs text-white font-medium">
+                  {SWING_PHASES[activePhaseIndex].label}
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 text-xs px-2 py-1 h-auto"
                 onClick={() => handleVideoUpload("pro")}
-                disabled={uploadingPro}
-                className="w-full aspect-video rounded-lg border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
               >
-                <Upload className="h-10 w-10 text-slate-500" />
-                <span className="text-slate-400 text-sm">
-                  {uploadingPro ? "Uploading..." : "Upload Pro Swing Video"}
-                </span>
-                <span className="text-slate-600 text-xs">MP4, MOV, WebM (max 30 sec)</span>
-              </button>
-            )}
-          </CardContent>
-        </Card>
+                Replace
+              </Button>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleVideoUpload("pro")}
+              disabled={uploadingPro}
+              className="w-full aspect-[9/16] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
+            >
+              <Upload className="h-8 w-8 text-slate-500" />
+              <span className="text-slate-400 text-sm text-center px-2">
+                {uploadingPro ? "Uploading..." : "Upload Pro Video"}
+              </span>
+              <span className="text-slate-600 text-xs">Max 30 sec</span>
+            </button>
+          )}
+        </div>
 
         {/* Personal swing panel */}
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-white text-base flex items-center gap-2">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+          <div className="px-3 py-2 border-b border-slate-700">
+            <h3 className="text-white text-sm font-medium flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
               My Swing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analysis.personal_video_url ? (
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
-                <video
-                  ref={personalVideoRef}
-                  src={analysis.personal_video_url}
-                  className="w-full h-full object-contain"
-                  muted
-                  playsInline
-                  preload="auto"
-                  crossOrigin="anonymous"
-                  onLoadedMetadata={(e) => setPersonalDuration(e.currentTarget.duration)}
-                  onCanPlay={handlePersonalVideoCanPlay}
-                  onError={handlePersonalVideoError}
-                />
-                {personalVideoError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4">
-                    <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
-                    <p className="text-amber-400 text-sm text-center">{personalVideoError}</p>
-                  </div>
-                )}
-                {/* Current phase indicator */}
-                {activePhaseIndex !== null && personalPhases[activePhaseIndex] && (
-                  <div className="absolute bottom-2 left-2 bg-emerald-600/80 px-2 py-1 rounded text-xs text-white font-medium">
-                    {SWING_PHASES[activePhaseIndex].label}
-                  </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60"
-                  onClick={() => handleVideoUpload("personal")}
-                >
-                  Replace
-                </Button>
-              </div>
-            ) : (
-              <button
+            </h3>
+          </div>
+          {analysis.personal_video_url ? (
+            <div className="relative aspect-[9/16] bg-black">
+              <video
+                ref={personalVideoRef}
+                src={analysis.personal_video_url}
+                className="w-full h-full object-contain"
+                muted
+                playsInline
+                preload="auto"
+                crossOrigin="anonymous"
+                onLoadedMetadata={(e) => setPersonalDuration(e.currentTarget.duration)}
+                onCanPlay={handlePersonalVideoCanPlay}
+                onError={handlePersonalVideoError}
+              />
+              {personalVideoError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 p-4">
+                  <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
+                  <p className="text-amber-400 text-sm text-center">{personalVideoError}</p>
+                </div>
+              )}
+              {/* Current phase indicator */}
+              {activePhaseIndex !== null && personalPhases[activePhaseIndex] && (
+                <div className="absolute bottom-2 left-2 bg-emerald-600/80 px-2 py-1 rounded text-xs text-white font-medium">
+                  {SWING_PHASES[activePhaseIndex].label}
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 text-xs px-2 py-1 h-auto"
                 onClick={() => handleVideoUpload("personal")}
-                disabled={uploadingPersonal}
-                className="w-full aspect-video rounded-lg border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
               >
-                <Upload className="h-10 w-10 text-slate-500" />
-                <span className="text-slate-400 text-sm">
-                  {uploadingPersonal ? "Uploading..." : "Upload Your Swing Video"}
-                </span>
-                <span className="text-slate-600 text-xs">MP4, MOV, WebM (max 30 sec)</span>
-              </button>
-            )}
-          </CardContent>
-        </Card>
+                Replace
+              </Button>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleVideoUpload("personal")}
+              disabled={uploadingPersonal}
+              className="w-full aspect-[9/16] border-2 border-dashed border-slate-600 hover:border-emerald-600/50 flex flex-col items-center justify-center gap-3 transition-colors bg-slate-900/30"
+            >
+              <Upload className="h-8 w-8 text-slate-500" />
+              <span className="text-slate-400 text-sm text-center px-2">
+                {uploadingPersonal ? "Uploading..." : "Upload Your Video"}
+              </span>
+              <span className="text-slate-600 text-xs">Max 30 sec</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Video Playback Issue Warning */}
