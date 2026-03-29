@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Allow ffmpeg wasm to load from CDN
+  // Allow ffmpeg wasm to load from CDN (required for SharedArrayBuffer)
   async headers() {
     return [
       {
@@ -40,18 +40,8 @@ const nextConfig: NextConfig = {
     ]
   },
 
-  // Exclude ffmpeg from webpack bundling (loaded from CDN)
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        crypto: false,
-      }
-    }
-    return config
-  },
+  // Turbopack config (required for Next.js 16+)
+  turbopack: {},
 }
 
 export default nextConfig
