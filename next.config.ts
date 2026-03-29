@@ -21,18 +21,19 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Allow ffmpeg wasm to load from CDN (required for SharedArrayBuffer)
+  // Allow ffmpeg wasm and TensorFlow to load from CDN
+  // Only apply COEP to swing-analysis page to avoid blocking API uploads
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/swing-analysis",
         headers: [
           {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin",
           },
           {
-            key: "Cross-Origin-Embedder-Policy",
+            key: "Cross-Origin-Embedder-Policy", 
             value: "credentialless",
           },
         ],
