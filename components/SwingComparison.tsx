@@ -456,7 +456,8 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
       </div>
 
       {/* Side-by-side video panels - optimized for vertical/portrait phone videos */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex justify-center">
+        <div className="grid grid-cols-2 gap-3 max-w-md">
         {/* Pro swing panel */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-700">
@@ -571,6 +572,7 @@ export function SwingComparison({ analysis, onBack, onVideoUploaded, onNotesUpda
               <span className="text-slate-600 text-xs">Max 30 sec</span>
             </button>
           )}
+        </div>
         </div>
       </div>
 
