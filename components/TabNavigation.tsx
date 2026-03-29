@@ -16,8 +16,8 @@ export function TabNavigation({ isAuthenticated = false, profilePictureUrl, disp
 
   const tabs = [
     { name: "Performance Overview", href: "/overview", icon: BarChart3 },
-    { name: "Handicap Tracker", href: "/handicap", icon: Home },
     { name: "Swing Analysis", href: "/swing-analysis", icon: Video },
+    { name: "Handicap Tracker", href: "/handicap", icon: Home },
     { name: "Course Reviews", href: "/reviews", icon: MessageSquare },
   ]
 
