@@ -1,28 +1,35 @@
 # Golf Handicap Tracker
 
-A web application for tracking golf rounds and calculating USGA handicap indices using the official World Handicap System.
+A web application for tracking golf rounds, calculating USGA handicap indices, and analyzing swing mechanics with AI-powered pose detection.
 
 **Live:** https://handicap-tracker.vercel.app
 
 ## Overview
 
-Implements the USGA World Handicap System formula to calculate accurate handicap indices from recorded rounds. Supports multiple players, tracks historical performance, and displays handicap progression over time.
+Implements the USGA World Handicap System formula to calculate accurate handicap indices from recorded rounds. Supports multiple players, tracks historical performance, and includes an AI-powered swing analysis module for side-by-side video comparison with automatic phase detection.
 
 ## Tech Stack
 
 - Next.js 16 (App Router)
 - React 19
 - TypeScript
-- Tailwind CSS + shadcn/ui
-- Supabase (PostgreSQL)
-- Vercel (deployment + analytics)
+- Tailwind CSS v4 + shadcn/ui
+- Supabase (PostgreSQL + Auth)
+- TensorFlow.js MoveNet (AI pose detection)
+- FFmpeg WASM (client-side video conversion)
+- Vercel (deployment + Blob storage + analytics)
 
 ## Key Features
 
+**Authentication**
+- Supabase Auth with email/password login and signup
+- Password reset flow
+- Protected routes with server-side auth checks
+
 **Player Management**
-- Add multiple players with favorite courses
+- Add multiple players with profile pictures and favorite courses
 - Switch between player profiles
-- View detailed player statistics
+- Inline handicap and rank badges
 
 **Round Tracking**
 - Record rounds with date, course, tee, rating, slope, and score
@@ -35,10 +42,27 @@ Implements the USGA World Handicap System formula to calculate accurate handicap
 - 96% multiplier applied per USGA standards
 - Minimum 3 rounds required
 
+**Course Reviews**
+- Rate courses by difficulty and conditions
+- Weather and overall ratings
+- Aggregated course statistics
+
+**Swing Analysis (AI-Powered)**
+- Upload personal and pro golfer swing videos (up to 50MB, max 30 seconds)
+- Client-side MOV → MP4 conversion via FFmpeg WASM
+- AI pose detection using TensorFlow.js MoveNet (CDN-based)
+- Automatic 7-phase swing detection:
+  - Address → Takeaway → Top of Backswing → Downswing → Impact → Follow Through → Finish
+- Side-by-side video comparison with portrait-friendly layout
+- Phase scrubber with frame-by-frame stepping
+- Adjustable video size controls
+- Save phase markers to database
+- Confidence scoring per detected phase
+
 **Analytics & Visualization**
 - Handicap progression charts (last 6 months)
 - Year-over-year statistics
-- Global statistics page with ISR
+- Global statistics page with ISR (hourly revalidation)
 
 ## Architecture
 
@@ -48,65 +72,46 @@ Implements the USGA World Handicap System formula to calculate accurate handicap
 - Server Components fetch initial data (fast first paint)
 - Client Components handle UI interactivity
 - Server Actions for mutations (no API boilerplate)
-
-**app/page.tsx (Server Component)**
-```typescript
-export default async function Home() {
-  const players = await getPlayers()  // Server-side
-  const rounds = await getRounds(playerId)
-  
-  return <HomeClient initialData={...} />  // Hydrate client
-}
-```
+- Edge Runtime for video upload API routes
 
 **ISR for Stats Page:**
 ```typescript
 export const revalidate = 3600  // 1 hour
+```
 
-async function getGlobalStats() {
-  // Pre-rendered at build, updates hourly
-}
+### Video Processing Pipeline
+
+1. Client-side duration validation (max 30 seconds)
+2. FFmpeg WASM converts MOV → MP4
+3. MoveNet AI detects pose keypoints per frame
+4. Phase markers derived from keypoint positions with confidence scores
+5. Video uploaded to Vercel Blob (`/swing-videos/{userId}/{analysisId}/{type}`)
+6. Phase timestamps and metadata saved to Supabase
+
+### Cross-Origin Headers
+
+The `/swing-analysis` route uses specific COEP/COOP headers to enable FFmpeg WASM and TensorFlow.js CDN resources:
+```
+Cross-Origin-Embedder-Policy: credentialless
+Cross-Origin-Opener-Policy: same-origin
 ```
 
 ### Database Schema
 
 **players**
-- id, name, favorite_course
+- id, name, favorite_course, profile_picture
 
 **rounds**
 - id, player_id, date, course, tee, rating, slope, score
 
-## Vercel Platform Features
+**course_reviews**
+- id, player_id, course, difficulty, conditions, weather, overall_rating
 
-- **Analytics:** Real user tracking (pageviews, geography)
-- **Speed Insights:** Core Web Vitals monitoring
-- **Edge Middleware:** Security headers on global network
-- **Edge Runtime:** API routes deployed globally
-- **ISR:** Stats page with hourly revalidation
-- **Preview Deployments:** Automatic staging URLs per branch
+**swing_analyses**
+- id, user_id, pro_video_url, personal_video_url, phase marker columns, notes, created_at
 
-## Performance
-
-- First Contentful Paint: ~1.0s
-- Largest Contentful Paint: ~1.2s
-- Core Web Vitals: All "Good" ratings
-
-Server Component strategy minimizes initial JavaScript bundle. Edge deployment reduces latency for international users.
-
-## Local Setup
-```bash
-git clone https://github.com/kwedoff-ship-it/golf-handicap.git
-cd golf-handicap
-npm install
-npm run dev
-```
-
-Environment variables (`.env.local`):
-```
-NEXT_PUBLIC_SUPABASE_URL=your_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
-SUPABASE_SERVICE_KEY=your_service_key
-```
+**user_profiles**
+- id, display_name, profile_picture
 
 ## USGA Handicap Calculation
 
@@ -131,31 +136,61 @@ Implementation: `lib/handicap.ts`
 ## Project Structure
 ```
 app/
-  ├── page.tsx              # Server Component (data fetching)
-  ├── layout.tsx            # Analytics + metadata
-  ├── stats/page.tsx        # ISR statistics page
-  ├── actions/              # Server Actions (mutations)
-  └── api/                  # Edge Runtime endpoints
+  ├── auth/                   # Login, signup, password reset
+  ├── overview/               # Dashboard
+  ├── handicap/               # Handicap details
+  ├── reviews/                # Course reviews
+  ├── swing-analysis/         # AI swing analysis
+  ├── settings/               # User settings
+  ├── stats/                  # ISR global statistics
+  ├── actions/                # Server Actions (mutations)
+  └── api/
+      ├── upload/             # Image uploads (Edge Runtime)
+      └── upload-video/       # Video uploads to Vercel Blob (Edge Runtime)
 
 components/
-  ├── Dashboard.tsx         # Main UI
-  ├── HomeClient.tsx        # Client-side state management
-  ├── HandicapChart.tsx     # Recharts visualization
-  └── [forms/tables]        # Feature components
+  ├── SwingAnalysisClient.tsx # Main swing analysis UI
+  ├── SwingComparison.tsx     # Side-by-side video player
+  ├── SwingPhaseControls.tsx  # Scrubber, phase markers, save
+  ├── AIDetectionOverlay.tsx  # Pose keypoint visualization
+  ├── Dashboard.tsx
+  ├── HandicapChart.tsx
+  ├── CourseSearch.tsx
+  ├── PlayerSelector.tsx
+  └── [forms/tables]
 
 lib/
-  ├── handicap.ts           # USGA calculation logic
-  ├── types.ts              # TypeScript definitions
-  └── supabase.ts           # Database client
+  ├── handicap.ts             # USGA calculation logic
+  ├── pose-detector.ts        # MoveNet AI pose detection
+  ├── video-converter.ts      # FFmpeg WASM conversion
+  ├── types.ts                # TypeScript definitions
+  └── supabase/               # Client, server, and proxy clients
 ```
 
-## Future Improvements
+## Vercel Platform Features
 
-- Dynamic player routes (`/player/[id]`)
-- Authentication (NextAuth.js)
-- Image optimization for player avatars
-- Leaderboard page with ISR
-- Mobile app (React Native)
+- **Blob Storage:** Swing video hosting with user-scoped paths
+- **Analytics:** Real user tracking (pageviews, geography)
+- **Speed Insights:** Core Web Vitals monitoring
+- **Edge Runtime:** API routes deployed globally
+- **ISR:** Stats page with hourly revalidation
+- **Preview Deployments:** Automatic staging URLs per branch
+
+## Local Setup
+```bash
+git clone https://github.com/kwedoff-ship-it/v0-golf-handicap-development.git
+cd v0-golf-handicap-development
+pnpm install
+pnpm dev
+```
+
+Environment variables (`.env.local`):
+```
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+SUPABASE_SERVICE_KEY=your_service_key
+BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
+```
 
 ## License
 
